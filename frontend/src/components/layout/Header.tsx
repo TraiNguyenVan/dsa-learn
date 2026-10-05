@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Play,
   RotateCcw,
@@ -29,6 +30,87 @@ interface HeaderProps {
   totalCount: number;
 }
 
+function ShortcutsDialog({ onClose }: { onClose: () => void }) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus({ preventScroll: true });
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Keyboard Shortcuts"
+        className="bg-[#121A2B] border border-slate-700 rounded-xl p-5 max-w-md w-full shadow-2xl"
+      >
+        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Keyboard className="w-4 h-4 text-emerald-400" /> Keyboard Shortcuts
+          </h3>
+          <button
+            ref={closeButtonRef}
+            onClick={onClose}
+            aria-label="Close keyboard shortcuts"
+            className="text-slate-400 hover:text-white text-sm"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="space-y-2.5 pt-3 text-xs">
+          <div className="flex justify-between py-1 border-b border-slate-800/40">
+            <span className="text-slate-400">Run Test Suite</span>
+            <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Ctrl + Enter</kbd>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-800/40">
+            <span className="text-slate-400">Direct Compile & Run</span>
+            <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Ctrl + Shift + Enter</kbd>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-800/40">
+            <span className="text-slate-400">Save to Disk</span>
+            <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Ctrl + S</kbd>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-800/40">
+            <span className="text-slate-400">Toggle Breakpoint</span>
+            <span className="text-slate-300 font-mono">Click Gutter</span>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-800/40">
+            <span className="text-slate-400">Start / Continue Debug</span>
+            <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">F5</kbd>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-800/40">
+            <span className="text-slate-400">Step Over</span>
+            <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">F10</kbd>
+          </div>
+          <div className="flex justify-between py-1 border-b border-slate-800/40">
+            <span className="text-slate-400">Step Into</span>
+            <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">F11</kbd>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-slate-400">Step Out</span>
+            <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Shift + F11</kbd>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export function Header({
   exerciseTitle,
   isExecuting,
@@ -44,7 +126,17 @@ export function Header({
   totalCount,
 }: HeaderProps) {
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const shortcutsButtonRef = useRef<HTMLButtonElement>(null);
   const percent = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
+
+  const closeShortcuts = useCallback(() => {
+    setShowShortcuts(false);
+    shortcutsButtonRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const toggleShortcuts = useCallback(() => {
+    setShowShortcuts((open) => !open);
+  }, []);
 
   return (
     <header className="h-14 border-b border-slate-800 bg-[#0B132B]/90 backdrop-blur px-4 flex items-center justify-between select-none">
@@ -131,11 +223,14 @@ export function Header({
 
         {/* Shortcuts button */}
         <Button
+          ref={shortcutsButtonRef}
           variant="ghost"
           size="sm"
-          onClick={() => setShowShortcuts(!showShortcuts)}
+          onClick={toggleShortcuts}
           className="h-8 w-8 p-0 text-slate-400 hover:text-white"
           title="Keyboard shortcuts"
+          aria-haspopup="dialog"
+          aria-expanded={showShortcuts}
         >
           <Keyboard className="w-4 h-4" />
         </Button>
@@ -213,58 +308,8 @@ export function Header({
         </Button>
       </div>
 
-      {/* Shortcuts Modal */}
-      {showShortcuts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#121A2B] border border-slate-700 rounded-xl p-5 max-w-md w-full shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Keyboard className="w-4 h-4 text-emerald-400" /> Keyboard Shortcuts
-              </h3>
-              <button
-                onClick={() => setShowShortcuts(false)}
-                className="text-slate-400 hover:text-white text-sm"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-2.5 pt-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span className="text-slate-400">Run Test Suite</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Ctrl + Enter</kbd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span className="text-slate-400">Direct Compile & Run</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Ctrl + Shift + Enter</kbd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span className="text-slate-400">Save to Disk</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Ctrl + S</kbd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span className="text-slate-400">Toggle Breakpoint</span>
-                <span className="text-slate-300 font-mono">Click Gutter</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span className="text-slate-400">Start / Continue Debug</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">F5</kbd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span className="text-slate-400">Step Over</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">F10</kbd>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-800/40">
-                <span className="text-slate-400">Step Into</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">F11</kbd>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-400">Step Out</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono">Shift + F11</kbd>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Shortcuts Modal (ported to document.body — see __tests__/headerShortcutsModal) */}
+      {showShortcuts && <ShortcutsDialog onClose={closeShortcuts} />}
     </header>
   );
 }
