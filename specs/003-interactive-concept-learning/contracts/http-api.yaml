@@ -1,0 +1,388 @@
+openapi: 3.1.0
+info:
+  title: DSA Learn Concept Learning & Pedagogy API
+  version: 1.0.0
+  description: Endpoints for topic lessons, progressive hints, pattern blueprints, decision matrices, and learner progress.
+paths:
+  /api/curriculum/topics/{topic_id}/lesson:
+    get:
+      summary: Retrieve topic theory lesson and operational complexity matrix
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: linked-lists
+      responses:
+        '200':
+          description: Concept lesson content with complexity matrix and reading progress
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - topic_id
+                  - title
+                  - summary
+                  - sections
+                  - complexity_matrix
+                  - reading_progress
+                properties:
+                  topic_id:
+                    type: string
+                  title:
+                    type: string
+                  summary:
+                    type: string
+                  sections:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - title
+                        - order
+                        - estimated_minutes
+                        - content_markdown
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        order:
+                          type: integer
+                        estimated_minutes:
+                          type: integer
+                        content_markdown:
+                          type: string
+                  complexity_matrix:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - operation
+                        - best_time
+                        - average_time
+                        - worst_time
+                        - space_complexity
+                        - notes
+                      properties:
+                        operation:
+                          type: string
+                        best_time:
+                          type: string
+                        average_time:
+                          type: string
+                        worst_time:
+                          type: string
+                        space_complexity:
+                          type: string
+                        notes:
+                          type: string
+                  reading_progress:
+                    type: object
+                    required:
+                      - completed_sections
+                      - last_read_section
+                      - progress_pct
+                    properties:
+                      completed_sections:
+                        type: array
+                        items:
+                          type: string
+                      last_read_section:
+                        type: string
+                        nullable: true
+                      progress_pct:
+                        type: integer
+        '404':
+          description: Topic not found
+
+  /api/curriculum/topics/{topic_id}/lesson/progress:
+    post:
+      summary: Update section completion or reading milestone for a topic lesson
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - section_id
+              properties:
+                section_id:
+                  type: string
+                mark_completed:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Updated lesson progress
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - topic_id
+                  - completed_sections
+                  - progress_pct
+                  - updated_at
+                properties:
+                  topic_id:
+                    type: string
+                  completed_sections:
+                    type: array
+                    items:
+                      type: string
+                  progress_pct:
+                    type: integer
+                  updated_at:
+                    type: string
+
+  /api/curriculum/topics/{topic_id}/visualizer/progress:
+    post:
+      summary: Record explored operations in the visualizer for progress tracking
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - operation_id
+              properties:
+                operation_id:
+                  type: string
+      responses:
+        '200':
+          description: Checkpoint recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  topic_id:
+                    type: string
+                  explored_operations:
+                    type: array
+                    items:
+                      type: string
+
+  /api/patterns:
+    get:
+      summary: Retrieve algorithmic pattern blueprints and decision matrix comparison entries
+      parameters:
+        - name: topic_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional filter by curriculum topic
+      responses:
+        '200':
+          description: Pattern blueprints and decision matrices
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - patterns
+                  - decision_matrix
+                properties:
+                  patterns:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - title
+                        - topic_ids
+                        - summary
+                        - trigger_cues
+                        - invariant_rules
+                        - code_template_cpp
+                        - common_pitfalls
+                        - related_exercise_ids
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        topic_ids:
+                          type: array
+                          items:
+                            type: string
+                        summary:
+                          type: string
+                        trigger_cues:
+                          type: array
+                          items:
+                            type: string
+                        invariant_rules:
+                          type: array
+                          items:
+                            type: string
+                        code_template_cpp:
+                          type: string
+                        common_pitfalls:
+                          type: array
+                          items:
+                            type: string
+                        related_exercise_ids:
+                          type: array
+                          items:
+                            type: string
+                  decision_matrix:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - scenario
+                        - candidates
+                      properties:
+                        id:
+                          type: string
+                        scenario:
+                          type: string
+                        candidates:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - structure_name
+                              - time_complexity
+                              - space_overhead
+                              - best_when
+                              - avoid_when
+                              - is_recommended
+                            properties:
+                              structure_name:
+                                type: string
+                              time_complexity:
+                                type: string
+                              space_overhead:
+                                type: string
+                              best_when:
+                                type: string
+                              avoid_when:
+                                type: string
+                              is_recommended:
+                                type: boolean
+
+  /api/exercises/{topic_id}/{exercise_id}/hints:
+    get:
+      summary: Retrieve hints and current unlock status for an exercise
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Hint list with tier unlock states
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - exercise_id
+                  - total_hints
+                  - max_unlocked_tier
+                  - hints
+                properties:
+                  exercise_id:
+                    type: string
+                  total_hints:
+                    type: integer
+                  max_unlocked_tier:
+                    type: integer
+                    description: 0 if no hints unlocked yet, 1 for nudge, 2 for strategy, 3 for pseudocode
+                  hints:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - tier
+                        - type
+                        - title
+                        - is_unlocked
+                      properties:
+                        tier:
+                          type: integer
+                        type:
+                          type: string
+                          enum: [NUDGE, STRATEGY, PSEUDOCODE]
+                        title:
+                          type: string
+                        is_unlocked:
+                          type: boolean
+                        content_markdown:
+                          type: string
+                          nullable: true
+                          description: Null if tier is locked
+
+  /api/exercises/{topic_id}/{exercise_id}/hints/unlock:
+    post:
+      summary: Unlock the next available progressive hint tier
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Next hint tier unlocked
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - unlocked_tier
+                  - hint
+                properties:
+                  unlocked_tier:
+                    type: integer
+                  hint:
+                    type: object
+                    required:
+                      - tier
+                      - type
+                      - title
+                      - content_markdown
+                    properties:
+                      tier:
+                        type: integer
+                      type:
+                        type: string
+                      title:
+                        type: string
+                      content_markdown:
+                        type: string
+        '400':
+          description: All hints already unlocked

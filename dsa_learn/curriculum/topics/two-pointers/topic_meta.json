@@ -1,0 +1,36 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Two Sum (Sorted Input)",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Opposite-end convergence eliminates O(N^2) search space."
+    },
+    {
+      "operation": "In-Place Reverse / Palindrome Check",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Compares and swaps elements moving inward; terminates at N/2 steps."
+    },
+    {
+      "operation": "Fast & Slow Cycle Detection (Floyd)",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Constant space cycle verification without hash set memory overhead."
+    },
+    {
+      "operation": "In-Place Deduplication / Compaction",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Slow pointer tracks write position while fast pointer scans."
+    }
+  ]
+}

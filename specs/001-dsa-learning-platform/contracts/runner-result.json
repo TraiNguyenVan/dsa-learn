@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VerificationResult",
+  "type": "object",
+  "required": ["exercise_id", "status", "summary", "duration_ms"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique verification attempt identifier"
+    },
+    "exercise_id": {
+      "type": "string",
+      "description": "Identifier of the exercise verified"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 execution timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PASSED", "FAILED", "COMPILATION_ERROR", "TIMEOUT", "RUNTIME_ERROR"]
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total verification wall clock execution duration in milliseconds"
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total", "passed", "failed"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0}
+      }
+    },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tier", "total", "passed", "tests"],
+        "properties": {
+          "tier": {
+            "type": "string",
+            "enum": ["Functional Correctness", "Boundary & Edge Cases", "Complexity & Resource Limits"]
+          },
+          "total": {"type": "integer", "minimum": 0},
+          "passed": {"type": "integer", "minimum": 0},
+          "tests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "passed"],
+              "properties": {
+                "name": {"type": "string"},
+                "passed": {"type": "boolean"},
+                "duration_us": {"type": "integer", "minimum": 0},
+                "expected": {"type": "string"},
+                "actual": {"type": "string"},
+                "failure_message": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "line", "column", "severity", "raw_message", "explanation"],
+        "properties": {
+          "file": {"type": "string"},
+          "line": {"type": "integer"},
+          "column": {"type": "integer"},
+          "severity": {
+            "type": "string",
+            "enum": ["error", "warning", "note"]
+          },
+          "raw_message": {"type": "string"},
+          "explanation": {"type": "string"},
+          "suggestion": {"type": "string"}
+        }
+      }
+    },
+    "raw_output": {
+      "type": "string",
+      "description": "Complete stdout and stderr streams captured during build and test execution"
+    }
+  }
+}

@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: DSA Learn In-Browser Editor & Toolchain API
+  version: 1.0.0
+  description: HTTP API extensions for in-browser code editing, direct compilation/execution, and host toolchain discovery.
+paths:
+  /api/exercises/{id}/code:
+    put:
+      summary: Save in-browser code edits to local exercise file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Exercise identifier (e.g., two-sum)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: Full source code text to persist to disk
+      responses:
+        '200':
+          description: Code saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  saved_at:
+                    type: string
+                    format: date-time
+                  file_path:
+                    type: string
+                    example: exercises/arrays-hashing/two-sum/solution.cpp
+        '404':
+          description: Exercise not found
+        '500':
+          description: Disk write error
+
+  /api/exercises/{id}/compile-run:
+    post:
+      summary: Compile and directly execute user solution with custom input
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stdin:
+                  type: string
+                  description: Optional standard input passed to program
+                  default: ""
+                timeout_ms:
+                  type: integer
+                  description: Maximum execution duration in milliseconds
+                  default: 3000
+      responses:
+        '200':
+          description: Execution completed or timed out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [SUCCESS, COMPILATION_ERROR, TIMEOUT, RUNTIME_ERROR]
+                  compiler_output:
+                    type: string
+                  program_output:
+                    type: string
+                  exit_code:
+                    type: integer
+                    nullable: true
+                  duration_ms:
+                    type: integer
+        '404':
+          description: Exercise not found
+
+  /api/tools:
+    get:
+      summary: Inspect available local host developer toolchains
+      responses:
+        '200':
+          description: Toolchain availability status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  compiler:
+                    type: object
+                    properties:
+                      available: { type: boolean }
+                      binary: { type: string }
+                      version: { type: string }
+                  language_server:
+                    type: object
+                    properties:
+                      available: { type: boolean }
+                      binary: { type: string }
+                      version: { type: string }
+                  debugger:
+                    type: object
+                    properties:
+                      available: { type: boolean }
+                      binary: { type: string }
+                      flavor: { type: string, enum: [gdb-dap, codelldb, lldb-dap, none] }
+                  shell:
+                    type: object
+                    properties:
+                      available: { type: boolean }
+                      path: { type: string }
+                      platform: { type: string, enum: [linux, darwin, windows] }

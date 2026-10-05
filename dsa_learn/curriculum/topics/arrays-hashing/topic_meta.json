@@ -1,0 +1,44 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Index Access (arr[i])",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Direct pointer offset calculation into contiguous memory."
+    },
+    {
+      "operation": "Append / Push Back",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "O(1) amortized. Worst case O(N) when dynamic buffer capacity doubles."
+    },
+    {
+      "operation": "Middle Insertion / Deletion",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Requires shifting all trailing elements left or right."
+    },
+    {
+      "operation": "Hash Table Lookup (map[key])",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Worst case O(N) occurs if all keys hash to the identical bucket."
+    },
+    {
+      "operation": "Hash Table Insert / Erase",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Average constant time; triggers rehashing when load factor is exceeded."
+    }
+  ]
+}

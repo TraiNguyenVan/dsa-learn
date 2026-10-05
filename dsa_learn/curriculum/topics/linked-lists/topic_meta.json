@@ -1,0 +1,44 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Prepend (Insert Head)",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Allocate node, set next to head, update head pointer."
+    },
+    {
+      "operation": "Append with Tail Pointer",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "O(N) if no tail reference is maintained."
+    },
+    {
+      "operation": "Search by Value",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Must traverse nodes sequentially via next pointers."
+    },
+    {
+      "operation": "Delete Known Node (Doubly Linked)",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Rewire next and prev pointers directly without scan."
+    },
+    {
+      "operation": "Reversal (In-Place)",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Single pass pointer inversion with constant auxiliary space."
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Search (BST)",
+      "best_time": "O(1)",
+      "average_time": "O(log N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(log N) stack",
+      "notes": "Worst case O(N) when tree is unbalanced/skewed."
+    },
+    {
+      "operation": "Insertion (BST)",
+      "best_time": "O(1)",
+      "average_time": "O(log N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(log N) stack",
+      "notes": "Follows search path to leaf position."
+    },
+    {
+      "operation": "Deletion (BST)",
+      "best_time": "O(1)",
+      "average_time": "O(log N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(log N) stack",
+      "notes": "Requires finding in-order successor if node has two children."
+    },
+    {
+      "operation": "In-Order Traversal",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(H) height",
+      "notes": "Visits every node exactly once; produces sorted order."
+    },
+    {
+      "operation": "Level-Order Traversal (BFS)",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(W) max width",
+      "notes": "Uses FIFO queue; explores nodes level by level."
+    }
+  ]
+}
