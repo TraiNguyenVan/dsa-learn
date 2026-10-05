@@ -175,6 +175,11 @@ class DSAHTTPRequestHandler(SimpleHTTPRequestHandler):
                 status, data = handlers.post_compile_run_handler(ex_id, body_bytes)
                 self._send_json(status, data)
                 return
+            if len(parts) == 5 and parts[4] == "debug-build":
+                ex_id = parts[3]
+                status, data = handlers.post_debug_build_handler(ex_id)
+                self._send_json(status, data)
+                return
             if len(parts) == 5 and parts[4] == "reset":
                 ex_id = parts[3]
                 status, data = handlers.post_reset_handler(ex_id)
@@ -225,9 +230,9 @@ class DSAHTTPRequestHandler(SimpleHTTPRequestHandler):
         elif path == "/ws/terminal":
             from dsa_learn.server.terminal_bridge import handle_terminal_websocket
             handle_terminal_websocket(ws, query)
-        elif path == "/ws/dap":
-            from dsa_learn.server.dap_bridge import handle_dap_websocket
-            handle_dap_websocket(ws, query)
+        elif path == "/ws/debug":
+            from dsa_learn.server.debug.bridge import handle_debug_websocket
+            handle_debug_websocket(ws, query)
         else:
             ws.close(1002, "Unsupported WebSocket endpoint")
 

@@ -382,3 +382,122 @@ def record_visualizer_operation(topic_id: str, operation_id: str, db_path: Path 
 
     conn.close()
     return ops_list
+
+
+# ---------------------------------------------------------------------------
+# Debugger breakpoints (FR-011, FR-012)
+#
+# Rows carry a content anchor alongside the line number. Storing the line alone
+# would make every breakpoint slide onto the wrong statement as soon as a learner
+# inserted a line above it, which is precisely the failure FR-011 forbids.
+# ---------------------------------------------------------------------------
+
+
+def get_breakpoints(exercise_id: str, db_path: Path | None = None) -> list[dict[str, Any]]:
+    """Retrieve an exercise's breakpoints, in line order."""
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, exercise_id, file_relpath, line, anchor_hash, anchor_line_text, created_at
+            FROM breakpoints
+            WHERE exercise_id = ?
+            ORDER BY file_relpath, line
+            """,
+            (exercise_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def set_breakpoint(
+    exercise_id: str,
+    file_relpath: str,
+    line: int,
+    anchor_hash: str,
+    anchor_line_text: str,
+    db_path: Path | None = None,
+) -> dict[str, Any]:
+    """Insert or update one breakpoint. Idempotent for a repeated toggle."""
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        existing = conn.execute(
+            """
+            SELECT id, created_at FROM breakpoints
+            WHERE exercise_id = ? AND file_relpath = ? AND line = ?
+            """,
+            (exercise_id, file_relpath, line),
+        ).fetchone()
+
+        if existing:
+            conn.execute(
+                """
+                UPDATE breakpoints
+                SET anchor_hash = ?, anchor_line_text = ?
+                WHERE id = ?
+                """,
+                (anchor_hash, anchor_line_text, existing["id"]),
+            )
+            conn.commit()
+            row_id, created_at = existing["id"], existing["created_at"]
+        else:
+            row_id = uuid.uuid4().hex
+            created_at = datetime.now().isoformat()
+            conn.execute(
+                """
+                INSERT INTO breakpoints
+                    (id, exercise_id, file_relpath, line, anchor_hash, anchor_line_text, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (row_id, exercise_id, file_relpath, line, anchor_hash, anchor_line_text, created_at),
+            )
+            conn.commit()
+
+        return {
+            "id": row_id,
+            "exercise_id": exercise_id,
+            "file_relpath": file_relpath,
+            "line": line,
+            "anchor_hash": anchor_hash,
+            "anchor_line_text": anchor_line_text,
+            "created_at": created_at,
+        }
+    finally:
+        conn.close()
+
+
+def clear_breakpoint(
+    exercise_id: str, file_relpath: str, line: int, db_path: Path | None = None
+) -> bool:
+    """Remove one breakpoint. Returns True when a row was actually deleted."""
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        cur = conn.execute(
+            """
+            DELETE FROM breakpoints
+            WHERE exercise_id = ? AND file_relpath = ? AND line = ?
+            """,
+            (exercise_id, file_relpath, line),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def clear_breakpoints_for_exercise(exercise_id: str, db_path: Path | None = None) -> int:
+    """Remove every breakpoint for an exercise. Returns how many were deleted."""
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        cur = conn.execute(
+            "DELETE FROM breakpoints WHERE exercise_id = ?", (exercise_id,)
+        )
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()

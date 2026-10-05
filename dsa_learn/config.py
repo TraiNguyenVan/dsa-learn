@@ -80,10 +80,25 @@ def binary_candidates(stem: str, platform: str | None = None) -> list[str]:
         return [f"{stem}.exe", stem]
     return [stem, f"{stem}.exe"]
 
-# Developer toolchain binaries & paths
+# Developer toolchain binaries & paths.
+#
+# The debugger has exactly one engine (FR-005). There is deliberately no second
+# flavour and no fallback chain here: the resolution and diagnosis logic lives in
+# `dsa_learn/server/debug/engine.py`, which is also the only place that knows how
+# to tell "installed" apart from "usable".
 CLANGD_BIN = os.environ.get("CLANGD_BIN") or shutil.which("clangd")
 GDB_BIN = os.environ.get("GDB_BIN") or shutil.which("gdb")
-CODELLDB_BIN = os.environ.get("CODELLDB_BIN") or shutil.which("codelldb") or shutil.which("lldb-dap")
+
+
+def get_debug_engine_status():
+    """Diagnostics verdict for the single supported debug engine.
+
+    Imported lazily: `config` is the lowest layer in the package, and the debug
+    engine module sits above it.
+    """
+    from dsa_learn.server.debug.engine import diagnose_engine
+
+    return diagnose_engine(binary=GDB_BIN)
 
 if sys.platform == "win32":
     DEFAULT_SHELL = os.environ.get("COMSPEC", "cmd.exe")
@@ -92,17 +107,12 @@ else:
 
 
 def get_toolchain_status() -> dict[str, Any]:
-    """Inspect and report availability of host developer toolchains."""
-    compiler_bin = shutil.which(DEFAULT_COMPILER) or shutil.which("g++") or shutil.which("clang++")
-    debugger_flavor = "none"
-    debugger_bin = None
+    """Inspect and report availability of host developer toolchains.
 
-    if GDB_BIN:
-        debugger_bin = GDB_BIN
-        debugger_flavor = "gdb-dap"
-    elif CODELLDB_BIN:
-        debugger_bin = CODELLDB_BIN
-        debugger_flavor = "codelldb"
+    The debugger section reports one engine only (FR-005) and names the specific
+    reason for any negative result rather than a generic unavailability (FR-007).
+    """
+    compiler_bin = shutil.which(DEFAULT_COMPILER) or shutil.which("g++") or shutil.which("clang++")
 
     return {
         "compiler": {
@@ -114,11 +124,7 @@ def get_toolchain_status() -> dict[str, Any]:
             "available": CLANGD_BIN is not None,
             "binary": CLANGD_BIN or "",
         },
-        "debugger": {
-            "available": debugger_bin is not None,
-            "binary": debugger_bin or "",
-            "flavor": debugger_flavor,
-        },
+        "debugger": get_debug_engine_status().to_dict(),
         "shell": {
             "available": True,
             "path": DEFAULT_SHELL,

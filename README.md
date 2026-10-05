@@ -1,188 +1,233 @@
-# DSA Learn: Local Web-Backed C++ DSA Learning Platform
+# dsa-learn
 
-A fast, offline-first, dual-surface platform for practicing Data Structures & Algorithms in modern C++ (C++20).
+**A local C++20 DSA practice platform. No cloud, no accounts, no telemetry.**
 
-Learners write and edit standard C++ source files in their own local editor (VS Code, Neovim, CLion), while an automated execution harness and a modern React 19 web dashboard deliver instant multi-tier verification feedback, diagnostic translation, and progress tracking on `localhost`.
+Solutions are plain `.cpp` files under `exercises/`. Save one and `dsa-learn` recompiles it with
+your local `g++` and runs the tests.
+
+```bash
+git clone https://github.com/TraiNguyenVan/dsa-learn.git
+cd dsa-learn
+./dsa-learn serve             # → the dashboard at localhost:8080
+```
+
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+![C++20](https://img.shields.io/badge/c%2B%2B-20-red.svg)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+![pip dependencies](https://img.shields.io/badge/pip_dependencies-none-brightgreen.svg)
 
 ---
 
-## Key Features
+## The dashboard
 
-- **Modern C++ Standard**: Authored in C++20 (`-std=c++20 -O2 -Wall -Wextra -pedantic`) using standard template library (STL) with clean, typed problem contracts.
-- **Dual-Surface Architecture**:
-  - **Local Editor Surface**: Work directly on local `.cpp` files in `exercises/`.
-  - **In-Browser IDE Surface**: Monaco Editor (VS Code engine) with live file sync, integrated terminal, compile/run, and DAP debugging over local WebSockets.
-  - **Visual Dashboard Surface**: Modern React 19 + Tailwind CSS + shadcn/ui dashboard running on `http://localhost:8080`.
-- **C++ IntelliSense in the Browser**: Autocompletion, hover docs, and signature help via a clangd LSP bridge with an offline static-STL fallback.
-- **DAP Debugging**: Breakpoints, stepping, watches, and call stacks via a local gdb/codelldb bridge.
-- **Multi-Tier Test Verification**:
-  1. *Tier 1: Functional Correctness* (standard algorithmic test cases).
-  2. *Tier 2: Boundary & Edge Cases* (empty inputs, single elements, extreme numeric values).
-  3. *Tier 3: Complexity & Resource Limits* (stress benchmarks and timeout checks).
-- **Sub-3s Verification Turnaround**: Native `g++` compilation with an embedded zero-dependency test assertion harness (`dsa_test.hpp`).
-- **Actionable Diagnostic Sanitizer**: Automatically translates raw GCC syntax and type errors into plain-language educational hints.
-- **Algorithmic Guardrails**: Hard timeouts (2.0s default) terminate infinite loops safely and capture runtime faults (`SIGSEGV`, `SIGABRT`) without crashing the platform.
-- **Interactive Theory Lessons & Complexity Matrices**: Detailed conceptual deep-dives, visual memory diagrams (contiguous buffer vs. pointer-linked chains, stack vs. heap), and Big-O operational performance tables (average vs. worst-case time & space).
-- **Interactive Visualizer Steppers**: Step-through state animators for foundational structures (Arrays, Linked Lists, Trees, and Heaps) with scrubber, playback speed controls, and keyboard shortcuts (`Space`, `→`, `←`, `R`).
-- **"Build from Scratch" Foundational Scaffolding**: Dedicated foundational exercises for fundamental data structures (`dynamic-array`, `singly-linked-list`) with method-by-method test breakdown (`TEST_FOUNDATION`) providing targeted feedback on individual member functions.
-- **3-Tier Progressive Hint System**: On-demand hint escalation (Tier 1: Conceptual Nudge -> Tier 2: Algorithmic Strategy -> Tier 3: Pseudocode & Invariants) with confirmation safeguards.
-- **Algorithmic Pattern Blueprints & Decision Matrix**: In-depth blueprints for recurring patterns (Two Pointers, Sliding Window, Fast & Slow Pointers, Monotonic Stack, Backtracking) and an interactive decision matrix matching performance constraints to optimal data structures.
-- **100% Offline-First**: Zero cloud dependencies, zero telemetry, local SQLite database (`.dsa/progress.db`).
-- **Live Auto-Run Watcher**: Detects when you save a file in your editor and streams real-time updates via Server-Sent Events (SSE).
+`serve` starts an HTTP server on `127.0.0.1:8080`, opens your browser, and watches `exercises/`
+for changes. Every save triggers a compile and test run, and the results stream back over SSE.
 
----
+The dashboard is a Monaco editor with clangd-backed autocompletion, an xterm.js terminal, a
+step debugger, and per-test results. It talks to your local `g++` and `gdb`; nothing leaves the
+machine.
 
-## Curriculum Overview (52 Problems Across 12 Roadmap.sh Topics)
-
-The platform includes **52 foundational and advanced exercises** covering all core topics from the official [roadmap.sh Data Structures & Algorithms](https://roadmap.sh/datastructures-and-algorithms) roadmap:
-
-| # | Topic | Problems Count | Key Problems Included |
-| :-: | :--- | :-: | :--- |
-| 1 | **Arrays & Hashing** | 7 | `dynamic-array` (Foundation), `two-sum`, `max-subarray`, `contains-duplicate`, `valid-anagram`, `group-anagrams`, `product-of-array-except-self` |
-| 2 | **Two Pointers** | 5 | `valid-palindrome`, `two-sum-ii`, `3sum`, `container-with-most-water`, `trapping-rain-water` |
-| 3 | **Sliding Window** | 4 | `best-time-to-buy-and-sell-stock`, `longest-substring-without-repeating`, `character-replacement`, `permutation-in-string` |
-| 4 | **Stack** | 4 | `valid-parentheses`, `min-stack`, `evaluate-reverse-polish-notation`, `daily-temperatures` |
-| 5 | **Binary Search** | 4 | `binary-search`, `search-a-2d-matrix`, `koko-eating-bananas`, `find-minimum-in-rotated-sorted-array` |
-| 6 | **Linked Lists** | 6 | `singly-linked-list` (Foundation), `reverse-linked-list`, `merge-two-sorted-lists`, `reorder-list`, `remove-nth-node-from-end`, `linked-list-cycle` |
-| 7 | **Trees & BSTs** | 6 | `invert-binary-tree`, `maximum-depth`, `same-tree`, `subtree-of-another-tree`, `lowest-common-ancestor-bst`, `level-order-traversal` |
-| 8 | **Tries (Prefix Trees)** | 2 | `implement-trie`, `design-add-and-search-words` |
-| 9 | **Heap / Priority Queue** | 3 | `kth-largest-in-stream`, `last-stone-weight`, `kth-largest-element-in-array` |
-| 10 | **Backtracking** | 3 | `subsets`, `combination-sum`, `permutations` |
-| 11 | **Graphs** | 4 | `number-of-islands`, `max-area-of-island`, `clone-graph`, `pacific-atlantic-water-flow` |
-| 12 | **Dynamic Programming** | 4 | `climbing-stairs`, `house-robber`, `house-robber-ii`, `coin-change` |
-
-### Pedagogical Reference & Roadmap.sh Alignment
-
-`dsa-learn` serves as the hands-on local C++ execution companion to the official **[roadmap.sh Data Structures & Algorithms](https://roadmap.sh/datastructures-and-algorithms)** and **[roadmap.sh C++ Developer Roadmap](https://roadmap.sh/cpp)**. While roadmap.sh provides theoretical explanations, visualizations, and knowledge trees, `dsa-learn` provides the local sandbox, C++20 standard library patterns, and automated multi-tier verification.
-
-For the comprehensive taxonomy, C++20 STL mapping matrix, and curriculum expansion roadmap, see **[`docs/roadmap-reference.md`](docs/roadmap-reference.md)**.
-
----
-
-## Quickstart
-
-### Prerequisites
-
-- **Python**: Python 3.10+ (standard library only; no pip dependencies required).
-- **C++ Compiler**: `g++` (>= 11 supporting C++20). `clang++` (>= 14) is used automatically if `g++` is unavailable. Set `$CXX` to choose explicitly.
-- **Node.js** (Optional, only needed if modifying/building frontend source): Node 18+.
-
-Compiler install notes:
-
-| Platform | Command |
-| :--- | :--- |
-| Ubuntu/Debian | `sudo apt update && sudo apt install -y g++ build-essential` |
-| Fedora | `sudo dnf install -y gcc-c++` |
-| Alpine | `apk add g++` |
-| macOS | `xcode-select --install` (provides `clang++`; run this first or `python3` will be missing too) |
-| Windows | Install MinGW-w64, e.g. via [MSYS2](https://www.msys2.org/). MSVC's `cl.exe` is **not** supported — the build uses GCC/Clang flags such as `-std=c++20`. |
-
-### Supported Platforms
-
-Linux and Windows are actively tested. macOS works but is **documented, not verified** by CI — if something misbehaves there, please open an issue.
-
-### How to Invoke the CLI
-
-All commands below are shown in the POSIX form. Use the equivalent for your shell:
-
-| Platform | Shell | Command |
-| :--- | :--- | :--- |
-| Linux / macOS / WSL / Git Bash | `bash`, `zsh` | `./dsa-learn <command>` |
-| Windows | `cmd.exe` | `dsa-learn.cmd <command>` |
-| Windows | PowerShell | `.\dsa-learn.ps1 <command>` |
-| Any (most reliable) | any | `python3 run.py <command>` / `python run.py <command>` |
-
-If `./dsa-learn` reports `Permission denied`, the executable bit was lost (common when downloading a ZIP instead of cloning). Fix it with `chmod +x dsa-learn`.
-
-On Windows, if no interpreter is found, set `DSA_LEARN_PYTHON` to the full path of your `python.exe`. On POSIX, set `$PYTHON`.
-
-### 1. Verify Environment
-
-```bash
-./dsa-learn version
-```
-
-### 2. View Curriculum & Progress
-
-```bash
-./dsa-learn list
-```
-
-### 3. Practice an Exercise in Terminal
-
-Edit your solution in `exercises/arrays-hashing/two-sum/solution.cpp`:
-
-```bash
-./dsa-learn test two-sum
-```
-
-To run with verbose test output:
-```bash
-./dsa-learn test two-sum --verbose
-```
-
-To get structured JSON output (for scripting):
-```bash
-./dsa-learn test two-sum --json
-```
-
-### 4. Launch Web Dashboard
-
-```bash
-./dsa-learn serve
-```
-Open [http://localhost:8080](http://localhost:8080) to browse problems, track progress, and view live test results.
-
-### 5. Reset an Exercise or View Reference Solution
-
-```bash
-# Restore original starter template
-./dsa-learn reset two-sum --force
-
-# View canonical reference solution
-./dsa-learn solution two-sum --confirm
-```
-
----
-
-## Project Structure
+The debugger drives `gdb` through its Machine Interface using a vendored copy of
+[pygdbmi](https://github.com/cs01/pygdbmi). GDB is the only supported engine, with no second
+engine and no fallback, so debugging behaves the same way on every platform. If GDB is missing or
+unusable, the debugger says exactly what is missing and the rest of the platform keeps working.
 
 ```text
-├── run.py                             # Platform-neutral CLI entry point (any shell/OS)
-├── dsa-learn                          # POSIX launcher (bash/zsh)
-├── dsa-learn.cmd                      # Windows launcher (cmd.exe)
-├── dsa-learn.ps1                      # Windows launcher (PowerShell)
-├── dsa_learn/                         # Core Python platform engine
-│   ├── config.py                      # Path configuration & defaults
-│   ├── cli/                           # CLI command handlers (test, list, serve, reset)
-│   ├── curriculum/                    # Curriculum catalog & protected test suites
-│   ├── runner/                        # C++ compiler wrapper, sandbox, dsa_test.hpp
-│   ├── server/                        # HTTP API, SSE watcher, WebSocket, LSP/DAP/terminal bridges
-│   └── storage/                       # SQLite schema & repository (.dsa/progress.db)
-├── exercises/                         # Learner workspace (edit your solutions here)
-├── frontend/                          # React 19 + TypeScript + Vite + Tailwind dashboard
-│   ├── src/components/                # editor, debugger, terminal, visualizer, concept, curriculum, ui
-│   └── dist/                          # Pre-built standalone static assets
-├── design-system/                     # Shared design system assets
-├── docs/                              # Reference docs (roadmap-reference.md)
-├── specs/                             # Spec-kit feature specifications (001–004)
-├── .specify/                          # Spec-kit config, bugs, memory, integrations
-└── tests/                             # Automated Python test suites
+========================================================================
+🚀 DSA Learn Platform Dashboard Live
+------------------------------------------------------------------------
+URL:        http://localhost:8080
+Mode:       Offline Local Workstation
+Watching:   exercises/ (auto-verification on file save)
+========================================================================
+Press Ctrl+C to stop.
 ```
 
----
-
-## Running Platform Tests
-
-Run from the repository root. Use `python3` on macOS and most Linux setups, `python` on Windows:
+### Linux
 
 ```bash
-python3 -m unittest discover tests   # Linux / macOS
-python -m unittest discover tests    # Windows
+cd dsa-learn
+chmod +x dsa-learn          # only needed if you skipped a fresh clone
+./dsa-learn serve
 ```
 
+### macOS
+
+```bash
+cd dsa-learn
+python3 run.py serve        # works even if the exec bit was lost in transit
+```
+
+### Windows
+
+`cmd.exe`:
+
+```bat
+cd dsa-learn
+dsa-learn.cmd serve
+```
+
+PowerShell:
+
+```powershell
+cd dsa-learn
+.\dsa-learn.ps1 serve
+```
+
+If the launcher can't find an interpreter, point it at one explicitly with
+`set DSA_LEARN_PYTHON=C:\path\to\python.exe`, or fall back to `python run.py serve`.
+
+### Options
+
+```bash
+./dsa-learn serve --port 3000    # default is 8080
+./dsa-learn serve --no-browser   # skip the automatic browser launch
+```
+
+It binds `127.0.0.1` only, so nothing is exposed to your network. If the port is busy it hunts
+upward (8080 → 8099) and prints the URL it actually bound — read the banner rather than assuming.
+
 ---
+
+## How it works
+
+Each run goes through three tiers in order:
+
+| Tier | Checks | Catches |
+| :--- | :--- | :--- |
+| **1. Functional** | Standard cases | Wrong algorithm, bad logic |
+| **2. Boundary** | Empty, single-element, extreme values | Off-by-one, unguarded indexing |
+| **3. Complexity** | Stress workloads, 2.0s timeout | Accidental O(N²) |
+
+Runs are sandboxed under a hard timeout, and `SIGSEGV`/`SIGABRT` are captured without taking down
+the server, so an infinite loop costs one failed run instead of a hung process. Compiler errors
+are translated into plain-language diagnoses instead of raw GCC output.
+
+Grading suites live in `dsa_learn/curriculum/topics/` and are not editable from your workspace.
+Three surfaces share the same files, so you can switch between them mid-problem:
+
+- **Local `.cpp` files** in `exercises/` — your normal editor and git workflow
+- **Browser IDE** — Monaco + xterm.js + DAP debugger, bridged over local WebSockets
+- **Dashboard** — React 19 + Tailwind on `localhost:8080`
+
+Also included: concept lessons with memory diagrams, step-through visualizers for arrays, linked
+lists, trees and heaps, five pattern blueprints with invariants and C++20 templates, a structure
+decision matrix, and three-tier progressive hints. Hints are hand-authored for the two foundation
+exercises; the rest fall back to a generic scaffold.
+
+---
+
+## Curriculum
+
+52 exercises across 12 topics (20 Easy, 31 Medium, 1 Hard), mapped to
+[roadmap.sh DSA](https://roadmap.sh/datastructures-and-algorithms).
+
+| Topic | # | | Topic | # |
+| :--- | :-: | :--- | :--- | :-: |
+| Arrays & Hashing | 7 | | Linked Lists | 6 |
+| Two Pointers | 5 | | Trees & BSTs | 6 |
+| Sliding Window | 4 | | Tries | 2 |
+| Stack | 4 | | Heap / Priority Queue | 3 |
+| Binary Search | 4 | | Backtracking | 3 |
+| Graphs | 4 | | Dynamic Programming | 4 |
+
+Run `./dsa-learn list` for every exercise id and your progress. The two foundation exercises
+(`dynamic-array`, `singly-linked-list`) are built from scratch, member function by member
+function, with per-method test breakdowns.
+
+Full taxonomy and C++20 STL mapping: [`docs/roadmap-reference.md`](docs/roadmap-reference.md).
+
+---
+
+## Setup
+
+Requires Python 3.10+ (standard library only) and g++ >= 11 or clang++ >= 14. Node 18+ is only
+needed if you plan to edit frontend source, since pre-built assets ship in `frontend/dist/`.
+
+```bash
+sudo apt install -y g++ build-essential   # Debian/Ubuntu
+sudo dnf install -y gcc-c++              # Fedora
+apk add g++                              # Alpine
+xcode-select --install                   # macOS (also installs python3)
+```
+
+Windows: install MinGW-w64 via [MSYS2](https://www.msys2.org/). MSVC is not supported, since the
+runner needs GCC/Clang flags like `-std=c++20`.
+
+### Debugger (optional)
+
+Everything except the debugger works without GDB. To debug, install GDB 7.6 or newer:
+
+```bash
+sudo apt install gdb                     # Debian/Ubuntu
+sudo dnf install gdb                     # Fedora
+apk add gdb                              # Alpine
+brew install gdb                         # macOS
+```
+
+macOS additionally requires a one-time code-sign step; without it macOS refuses to launch GDB and
+the dashboard will say so:
+
+```bash
+sudo codesign -s - $(which gdb)
+```
+
+On Windows use the MinGW-w64 or Cygwin GDB. Run `./dsa-learn version` to see whether the debugger
+is usable and, if not, the specific reason.
+
+Any command follows the same shape as `serve`: `./dsa-learn <cmd>` on bash/zsh,
+`dsa-learn.cmd <cmd>` on cmd.exe, `.\dsa-learn.ps1 <cmd>` in PowerShell, or `python3 run.py <cmd>`
+anywhere. See the dashboard section above for a worked example on each OS.
+
+The 251-test suite passes on Linux and Windows is manually green. macOS is untested, and there is
+no CI pipeline yet, so treat platform coverage as best-effort.
+
+---
+
+## Commands
+
+```bash
+./dsa-learn version                    # toolchain diagnostics
+./dsa-learn list                       # curriculum + progress
+./dsa-learn test two-sum [--verbose|--json]
+./dsa-learn reset two-sum --force      # restore starter stub
+./dsa-learn solution two-sum --confirm # reference solution
+```
+
+`./dsa-learn serve` is documented in full [above](#the-dashboard).
+
+---
+
+## Development
+
+```bash
+python3 -m unittest discover tests     # 251 tests
+```
+
+Frontend tests (requires Node 18+):
+
+```bash
+cd frontend && npm run test:unit        # vitest
+cd frontend && npm test                 # node:test shortcuts suite
+```
+
+Built with [spec-kit](https://github.com/github/spec-kit). Features are specced under `specs/`
+and checked against `.specify/memory/constitution.md`, which defines the quality gates for
+contributing an exercise: problem statement, starter template, test suite, reference solution,
+and metadata.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
+
+### Third-party components
+
+Vendored in-tree, so there is still nothing to `pip install`:
+
+| Component | Version | Licence | Used for |
+|---|---|---|---|
+| [pygdbmi](https://github.com/cs01/pygdbmi) | 0.11.0.0 | MIT | Driving GDB through the Machine Interface for the browser debugger |
+
+`dsa_learn/vendor/pygdbmi/` is an **unmodified** copy of the upstream release. Its MIT licence is
+kept alongside it at `dsa_learn/vendor/pygdbmi/LICENSE`. Do not edit, patch, or reformat files in
+that directory.

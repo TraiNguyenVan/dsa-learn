@@ -78,3 +78,73 @@ class TestServer(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestToolsDebuggerContract(unittest.TestCase):
+    """`GET /api/tools` reports exactly one engine, with a specific reason.
+
+    FR-005 removes the LLDB flavours; FR-006/007 require the reason for any
+    negative result to be specific rather than a generic unavailability.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.server, port = create_server("127.0.0.1", port=8994)
+        cls.base_url = f"http://127.0.0.1:{port}"
+        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.thread.start()
+        time.sleep(0.1)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.server:
+            cls.server.shutdown()
+            cls.server.server_close()
+
+    def _debugger(self) -> dict:
+        req = urllib.request.Request(f"{self.base_url}/api/tools")
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode("utf-8"))["debugger"]
+
+    def test_debugger_section_has_the_contract_shape(self):
+        status = self._debugger()
+        self.assertEqual(
+            set(status),
+            {
+                "available",
+                "binary",
+                "flavor",
+                "version",
+                "meets_minimum_version",
+                "blocked_reason",
+                "remediation",
+            },
+        )
+
+    def test_flavor_is_gdb_or_none_never_an_lldb_variant(self):
+        flavor = self._debugger()["flavor"]
+        self.assertIn(flavor, ("gdb", "none"))
+        self.assertNotIn("lldb", str(flavor).lower())
+
+    def test_blocked_reason_is_present_exactly_when_unavailable(self):
+        status = self._debugger()
+        if status["available"]:
+            self.assertIsNone(status["blocked_reason"])
+        else:
+            self.assertTrue(status["blocked_reason"])
+            self.assertNotEqual(status["blocked_reason"], "unavailable")
+
+    def test_unavailable_status_carries_actionable_remediation(self):
+        status = self._debugger()
+        if not status["available"]:
+            self.assertTrue(status["remediation"])
+            self.assertIn("gdb", (status["remediation"] or "").lower())
+
+    def test_other_toolchain_sections_are_unchanged(self):
+        req = urllib.request.Request(f"{self.base_url}/api/tools")
+        with urllib.request.urlopen(req) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        for section in ("compiler", "language_server", "shell"):
+            self.assertIn(section, payload)
+        self.assertEqual(set(payload["compiler"]), {"available", "binary", "flavor"})
+        self.assertEqual(set(payload["language_server"]), {"available", "binary"})

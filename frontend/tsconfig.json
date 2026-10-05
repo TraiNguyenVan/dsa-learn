@@ -19,7 +19,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    // Supplies the `?worker` module declarations used by
+    // `src/lib/monacoWorkers.ts`.
+    "types": ["vite/client"]
   },
   "include": ["src"]
 }

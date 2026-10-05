@@ -9,7 +9,12 @@ import sys
 from dsa_learn import __version__
 from dsa_learn.cli.catalog_cmd import handle_list_cmd, handle_reset_cmd, handle_solution_cmd
 from dsa_learn.cli.test_cmd import handle_test_cmd
-from dsa_learn.config import DEFAULT_COMPILER, ensure_directories, resolve_compiler
+from dsa_learn.config import (
+    DEFAULT_COMPILER,
+    ensure_directories,
+    get_toolchain_status,
+    resolve_compiler,
+)
 from dsa_learn.storage import db
 
 
@@ -33,6 +38,17 @@ def handle_version_cmd() -> int:
     else:
         tried = DEFAULT_COMPILER
         print(f"C++ Compiler:      ⚠️ NOT FOUND (tried: {tried}, g++, clang++)")
+
+    # Debugger: one engine only, with the specific reason for any negative
+    # result (FR-006, FR-007). Absence is not an error here - everything except
+    # debugging works without it.
+    debugger = get_toolchain_status()["debugger"]
+    if debugger["available"]:
+        print(f"Debugger:          GDB {debugger['version'] or '?'} ({debugger['binary']})")
+    else:
+        print(f"Debugger:          not available ({debugger['blocked_reason']})")
+        if debugger["remediation"]:
+            print(f"                   {debugger['remediation']}")
 
     # DB readiness
     ensure_directories()

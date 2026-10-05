@@ -1,5 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import Editor, { loader, OnMount } from '@monaco-editor/react';
+// Must be imported before `monaco-editor` so `self.MonacoEnvironment` exists by
+// the time Monaco initialises and looks for its web workers.
+import '@/lib/monacoWorkers';
 import * as monaco from 'monaco-editor';
 import { useLSP } from './useLSP';
 import { STATIC_CPP_COMPLETIONS } from './cppCompletions';

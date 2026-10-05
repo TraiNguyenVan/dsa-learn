@@ -1,22 +1,44 @@
+/**
+ * Debugger panel: the stepping toolbar plus the debug console.
+ *
+ * The panel stays the platform's own component (FR-020). It is populated from
+ * the adopted library's data through `useDebugger`, and re-themed to the
+ * project's design system (FR-021, SC-003, SC-012).
+ *
+ * Icons are vector components from the established set with accessible names.
+ * No emoji, no glyph substitutes (SC-004).
+ */
+
 import {
-  Play,
-  Pause,
-  SkipForward,
+  Bug,
   CornerDownRight,
   CornerUpRight,
+  Pause,
+  Play,
+  SkipForward,
   Square,
-  Bug,
-  Layers,
-  Variable as VariableIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DebugSessionState, StackFrame, Variable } from '@/lib/types';
+import { DebugConsole } from '@/components/debugger/DebugConsole';
+import type { DebugSessionState, DebugStackFrame, DebugVariable } from '@/lib/types';
+
+export interface DebuggerAvailability {
+  available: boolean;
+  remediation: string | null;
+}
 
 interface DebuggerPanelProps {
   debugState: DebugSessionState;
-  callStack: StackFrame[];
-  variables: Variable[];
+  callStack: DebugStackFrame[];
+  variables: DebugVariable[];
   statusMessage: string;
+  remediation: string | null;
+  availability: DebuggerAvailability;
+  selectedFrameId: string | null;
+  expandedHandles: Set<string>;
+  childrenByHandle: Record<string, DebugVariable[]>;
+  appliedBreakpoints: number;
+  requestedBreakpoints: number;
   onContinue: () => void;
   onPause: () => void;
   onStepOver: () => void;
@@ -24,6 +46,8 @@ interface DebuggerPanelProps {
   onStepOut: () => void;
   onStop: () => void;
   onStart: () => void;
+  onSelectFrame: (frameId: string) => void;
+  onExpandVariable: (handle: string) => void;
 }
 
 export function DebuggerPanel({
@@ -31,6 +55,13 @@ export function DebuggerPanel({
   callStack,
   variables,
   statusMessage,
+  remediation,
+  availability,
+  selectedFrameId,
+  expandedHandles,
+  childrenByHandle,
+  appliedBreakpoints,
+  requestedBreakpoints,
   onContinue,
   onPause,
   onStepOver,
@@ -38,24 +69,46 @@ export function DebuggerPanel({
   onStepOut,
   onStop,
   onStart,
+  onSelectFrame,
+  onExpandVariable,
 }: DebuggerPanelProps) {
   const isStopped = debugState === 'STOPPED';
-  const isIdle = debugState === 'IDLE' || debugState === 'TERMINATED';
+  const isIdle = debugState === 'IDLE' || debugState === 'TERMINATED' || debugState === 'FAILED';
+  // A session still compiling or launching has no stepping controls, but must
+  // stay cancellable rather than trapping the learner in a hung state (FR-018).
+  const isStarting = debugState === 'COMPILING' || debugState === 'LAUNCHING';
+  const canStart = isIdle && availability.available;
 
   return (
-    <div className="h-full flex flex-col bg-[#0B1220] text-xs">
-      {/* Stepping Toolbar */}
-      <div className="px-3 py-1.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-        <div className="flex items-center gap-1.5">
+    <div className="debug-surface h-full flex flex-col text-xs">
+      <div className="debug-pane-header px-3 py-1.5 border-b flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {isIdle ? (
             <Button
               variant="outline"
               size="sm"
               onClick={onStart}
-              className="h-7 text-xs bg-purple-950/40 border-purple-800 text-purple-300 hover:bg-purple-900/50"
-              title="Launch Debugger (F5)"
+              disabled={!canStart}
+              className="debug-focusable h-7 text-xs"
+              title={
+                availability.available
+                  ? 'Start debugging (F5)'
+                  : 'The debugger is unavailable on this machine'
+              }
             >
-              <Bug className="w-3.5 h-3.5 mr-1 text-purple-400" /> Start Debugging (F5)
+              <Bug className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+              Start Debugging (F5)
+            </Button>
+          ) : isStarting ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onStop}
+              className="debug-focusable h-7 px-2 text-destructive hover:text-destructive"
+              title="Cancel (Shift+F5)"
+            >
+              <Square className="w-3 h-3 mr-1 fill-current" aria-hidden="true" />
+              Cancel
             </Button>
           ) : (
             <>
@@ -64,20 +117,22 @@ export function DebuggerPanel({
                   variant="outline"
                   size="sm"
                   onClick={onContinue}
-                  className="h-7 px-2.5 bg-emerald-950/40 border-emerald-800 text-emerald-300 hover:bg-emerald-900/50"
+                  className="debug-focusable h-7 px-2.5"
                   title="Continue (F5)"
                 >
-                  <Play className="w-3.5 h-3.5 mr-1 fill-emerald-400 text-emerald-400" /> Continue (F5)
+                  <Play className="w-3.5 h-3.5 mr-1 fill-current" aria-hidden="true" />
+                  Continue (F5)
                 </Button>
               ) : (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={onPause}
-                  className="h-7 px-2.5 bg-amber-950/40 border-amber-800 text-amber-300 hover:bg-amber-900/50"
+                  className="debug-focusable h-7 px-2.5"
                   title="Pause"
                 >
-                  <Pause className="w-3.5 h-3.5 mr-1 fill-amber-400 text-amber-400" /> Pause
+                  <Pause className="w-3.5 h-3.5 mr-1 fill-current" aria-hidden="true" />
+                  Pause
                 </Button>
               )}
 
@@ -86,10 +141,11 @@ export function DebuggerPanel({
                 size="sm"
                 onClick={onStepOver}
                 disabled={!isStopped}
-                className="h-7 px-2 text-slate-300 hover:text-white"
+                className="debug-focusable h-7 px-2"
                 title="Step Over (F10)"
               >
-                <SkipForward className="w-3.5 h-3.5 mr-1 text-sky-400" /> Step Over (F10)
+                <SkipForward className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                Step Over (F10)
               </Button>
 
               <Button
@@ -97,10 +153,11 @@ export function DebuggerPanel({
                 size="sm"
                 onClick={onStepInto}
                 disabled={!isStopped}
-                className="h-7 px-2 text-slate-300 hover:text-white"
+                className="debug-focusable h-7 px-2"
                 title="Step Into (F11)"
               >
-                <CornerDownRight className="w-3.5 h-3.5 mr-1 text-teal-400" /> Step Into (F11)
+                <CornerDownRight className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                Step Into (F11)
               </Button>
 
               <Button
@@ -108,81 +165,64 @@ export function DebuggerPanel({
                 size="sm"
                 onClick={onStepOut}
                 disabled={!isStopped}
-                className="h-7 px-2 text-slate-300 hover:text-white"
+                className="debug-focusable h-7 px-2"
                 title="Step Out (Shift+F11)"
               >
-                <CornerUpRight className="w-3.5 h-3.5 mr-1 text-indigo-400" /> Step Out
+                <CornerUpRight className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                Step Out (Shift+F11)
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onStop}
-                className="h-7 px-2 text-rose-400 hover:text-rose-300"
+                className="debug-focusable h-7 px-2 text-destructive hover:text-destructive"
                 title="Stop Debugging (Shift+F5)"
               >
-                <Square className="w-3 h-3 mr-1 fill-rose-400" /> Stop
+                <Square className="w-3 h-3 mr-1 fill-current" aria-hidden="true" />
+                Stop
               </Button>
             </>
           )}
         </div>
 
-        {/* State Status Banner */}
-        <div className="font-mono text-[11px] text-slate-400 truncate max-w-sm">
-          {statusMessage || (isIdle ? 'Debugger ready. Set breakpoints and click Start.' : debugState)}
-        </div>
+        <p className="debug-muted font-mono text-[11px] truncate max-w-sm" role="status">
+          {statusMessage ||
+            (isIdle ? 'Debugger ready. Set breakpoints and click Start.' : debugState)}
+        </p>
       </div>
 
-      {/* Panels: Call Stack & Scoped Variables */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Call Stack */}
-        <div className="w-1/2 border-r border-slate-800/80 flex flex-col bg-[#0A101D]">
-          <div className="px-3 py-1.5 bg-slate-900/40 border-b border-slate-800 text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-purple-400" /> Call Stack
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {callStack.length === 0 ? (
-              <div className="text-slate-600 text-[11px] p-2 italic">No active frames</div>
-            ) : (
-              callStack.map((frame, idx) => (
-                <div
-                  key={frame.id}
-                  className={`p-1.5 rounded font-mono text-[11px] flex justify-between items-center ${
-                    idx === 0 ? 'bg-purple-950/40 text-purple-200 border border-purple-800/50' : 'text-slate-400 hover:bg-slate-800/40'
-                  }`}
-                >
-                  <span className="truncate">{frame.name}</span>
-                  <span className="text-[10px] text-slate-500 font-sans ml-2">Line {frame.line}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+      {!availability.available && isIdle && (
+        <p
+          className="px-3 py-1.5 border-b text-[11px] text-destructive"
+          role="status"
+        >
+          Debugging is unavailable: {availability.remediation ?? 'GDB is required.'}
+        </p>
+      )}
 
-        {/* Right: Variables Inspection */}
-        <div className="w-1/2 flex flex-col bg-[#090F1B]">
-          <div className="px-3 py-1.5 bg-slate-900/40 border-b border-slate-800 text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-            <VariableIcon className="w-3.5 h-3.5 text-teal-400" /> Scoped Variables
-          </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {variables.length === 0 ? (
-              <div className="text-slate-600 text-[11px] p-2 italic">No variables in current scope</div>
-            ) : (
-              <div className="space-y-1 font-mono text-[11px]">
-                {variables.map((v) => (
-                  <div key={v.name} className="flex items-baseline justify-between p-1 rounded hover:bg-slate-800/30">
-                    <div className="flex items-baseline gap-1.5 truncate">
-                      <span className="text-teal-300 font-semibold">{v.name}:</span>
-                      {v.type && <span className="text-[10px] text-slate-500 font-sans">({v.type})</span>}
-                    </div>
-                    <span className="text-amber-300 ml-2 font-bold select-text">{v.value}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {remediation && debugState !== 'IDLE' && (
+        <p className="px-3 py-1.5 border-b text-[11px] text-destructive" role="status">
+          {remediation}
+        </p>
+      )}
+
+      {requestedBreakpoints > 0 && appliedBreakpoints < requestedBreakpoints && (
+        <p className="px-3 py-1.5 border-b text-[11px] debug-muted" role="status">
+          {appliedBreakpoints} of {requestedBreakpoints} breakpoints could be placed.
+        </p>
+      )}
+
+      <DebugConsole
+        callStack={callStack}
+        variables={variables}
+        selectedFrameId={selectedFrameId}
+        isStopped={isStopped}
+        onSelectFrame={onSelectFrame}
+        onExpandVariable={onExpandVariable}
+        expandedHandles={expandedHandles}
+        childrenByHandle={childrenByHandle}
+      />
     </div>
   );
 }

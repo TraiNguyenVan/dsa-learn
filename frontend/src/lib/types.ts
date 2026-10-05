@@ -140,25 +140,26 @@ export interface Breakpoint {
   verified: boolean;
 }
 
-export interface StackFrame {
-  id: number;
-  name: string;
-  source?: string;
+/** One entry in the suspended call stack (data-model.md §1.6).
+ *  `level` 0 is the innermost frame; `line`/`column` are -1 when unknown. */
+export interface DebugStackFrame {
+  id: string;
+  level: number;
+  function: string;
+  file: string | null;
   line: number;
   column: number;
 }
 
-export interface Scope {
+/** A named, typed value with a lazily expandable child collection (data-model.md §1.8).
+ *  `handle` is null whenever `has_children` is false. */
+export interface DebugVariable {
   name: string;
-  variablesReference: number;
-  expensive?: boolean;
-}
-
-export interface Variable {
-  name: string;
+  type: string | null;
   value: string;
-  type?: string;
-  variablesReference: number;
+  has_children: boolean;
+  handle: string | null;
+  truncated: boolean;
 }
 
 export type DebugSessionState =
@@ -167,13 +168,66 @@ export type DebugSessionState =
   | 'LAUNCHING'
   | 'RUNNING'
   | 'STOPPED'
-  | 'TERMINATED';
+  | 'TERMINATED'
+  | 'FAILED';
+
+export type DebugCommandType =
+  | 'start'
+  | 'continue'
+  | 'step_over'
+  | 'step_into'
+  | 'step_out'
+  | 'pause'
+  | 'stop'
+  | 'select_frame'
+  | 'expand_variable'
+  | 'refresh';
+
+export interface DebugBreakpointSpec {
+  file: string;
+  line: number;
+}
+
+export interface DebugStartData {
+  applied_breakpoints: number;
+  requested_breakpoints: number;
+  orphaned_breakpoints: { file: string; line: number; reason: string }[];
+}
+
+/** Every server->client message, discriminated by `type` (contracts/debug-protocol.md §3). */
+export type DebugServerMessage =
+  | { type: 'result'; id: number; command: DebugCommandType; data: Partial<DebugStartData> & Record<string, unknown> }
+  | { type: 'error'; id: number; code: string; message: string; remediation: string | null }
+  | { type: 'state'; state: DebugSessionState; reason?: string; line?: number; file?: string; exit_code?: number }
+  | { type: 'stack'; frames: DebugStackFrame[] }
+  | { type: 'variables'; frame_id: string; variables: DebugVariable[] }
+  | { type: 'output'; stream: 'console' | 'stderr' | 'target'; text: string; seq: number }
+  | { type: 'diagnostic'; blocked_reason: string; remediation: string | null }
+  | { type: 'engine_error'; message: string };
 
 export interface CompileRunResult {
   status: 'SUCCESS' | 'COMPILATION_ERROR' | 'TIMEOUT' | 'RUNTIME_ERROR';
   compiler_output: string;
   program_output: string;
   exit_code: number | null;
+  duration_ms: number;
+}
+
+/** Result of POST /api/exercises/{id}/debug-build. On success the server hands back the
+ *  authoritative absolute paths, so the client never rebuilds the exercise layout. */
+export interface DebugBuildResult {
+  status: 'SUCCESS' | 'COMPILATION_ERROR';
+  compiler_output: string;
+  program_path: string | null;
+  source_path: string | null;
+  duration_ms: number;
+}
+
+export interface DebugBuildResult {
+  status: 'SUCCESS' | 'COMPILATION_ERROR';
+  compiler_output: string;
+  program_path: string | null;
+  source_path: string | null;
   duration_ms: number;
 }
 
@@ -190,7 +244,13 @@ export interface ToolsStatus {
   debugger: {
     available: boolean;
     binary: string;
-    flavor: 'gdb-dap' | 'codelldb' | 'lldb-dap' | 'none';
+    /** Single-valued: this platform supports exactly one engine (FR-005). */
+    flavor: 'gdb' | 'none';
+    version: string;
+    meets_minimum_version: boolean;
+    /** Null exactly when `available` is true. Never a generic "unavailable" (FR-007). */
+    blocked_reason: string | null;
+    remediation: string | null;
   };
   shell: {
     available: boolean;

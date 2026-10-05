@@ -257,6 +257,25 @@ def post_compile_run_handler(exercise_id: str, body_bytes: bytes) -> tuple[int, 
         return 404, {"error": f"Exercise '{exercise_id}' not found"}
 
 
+def post_debug_build_handler(exercise_id: str) -> tuple[int, dict[str, Any]]:
+    """POST /api/exercises/{id}/debug-build - Compile with -g -O0 for an interactive debug session.
+
+    Returns the absolute program and source paths the DAP bridge needs, so the client
+    never has to reconstruct the exercise directory layout itself.
+    """
+    from dsa_learn.runner.compiler import compile_debug_binary_for_exercise
+
+    try:
+        res = compile_debug_binary_for_exercise(exercise_id)
+    except KeyError:
+        return 404, {"error": f"Exercise '{exercise_id}' not found"}
+
+    if res["status"] != "SUCCESS":
+        return 422, res
+
+    return 200, res
+
+
 def get_topic_lesson_handler(topic_id: str) -> tuple[int, dict[str, Any]]:
     """GET /api/curriculum/topics/{topic_id}/lesson - Return structured lesson & Big-O matrix."""
     from dsa_learn.curriculum.loader import get_topic_lesson

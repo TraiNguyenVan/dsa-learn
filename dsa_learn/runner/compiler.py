@@ -306,7 +306,7 @@ def compile_debug_binary(
     output_binary: Path,
     compiler: str | None = None,
 ) -> CompilerResult:
-    """Compile with debug symbols (-g -O0) for interactive GDB/CodeLLDB sessions."""
+    """Compile with debug symbols (-g -O0) for an interactive GDB session."""
     from dsa_learn.config import DEBUG_COMPILER_FLAGS
     return compile_exercise(
         solution_file=solution_file,
@@ -315,6 +315,52 @@ def compile_debug_binary(
         compiler=compiler,
         extra_flags=DEBUG_COMPILER_FLAGS,
     )
+
+
+def debug_binary_path(exercise_id: str) -> Path:
+    """Return the path the debug binary for an exercise is expected at.
+
+    Single source of truth for the ``debug_<slug>`` naming, shared by the debug-build
+    endpoint and the DAP bridge so the two can never disagree about the target.
+    """
+    from dsa_learn.config import BUILD_DIR
+    from dsa_learn.runner.executor import find_exercise
+
+    ex = find_exercise(exercise_id)
+    return BUILD_DIR / f"debug_{ex['slug']}"
+
+
+def compile_debug_binary_for_exercise(exercise_id: str) -> dict[str, Any]:
+    """Compile an exercise with debug symbols and report the paths the DAP bridge needs.
+
+    Resolves the solution and test sources from the curriculum catalog so callers never
+    have to reconstruct the ``exercises/<topic>/<slug>/solution.cpp`` layout themselves.
+    """
+    from dsa_learn.config import WORKSPACE_ROOT
+    from dsa_learn.runner.executor import find_exercise
+
+    ex = find_exercise(exercise_id)
+    sol_file = WORKSPACE_ROOT / ex["starter_relpath"]
+    test_file = WORKSPACE_ROOT / ex["test_relpath"]
+    out_bin = debug_binary_path(exercise_id)
+
+    comp_res = compile_debug_binary(sol_file, test_file, out_bin)
+    if not comp_res.success or not comp_res.binary_path:
+        return {
+            "status": "COMPILATION_ERROR",
+            "compiler_output": comp_res.raw_output,
+            "program_path": None,
+            "source_path": None,
+            "duration_ms": comp_res.duration_ms,
+        }
+
+    return {
+        "status": "SUCCESS",
+        "compiler_output": comp_res.raw_output,
+        "program_path": str(comp_res.binary_path.resolve()),
+        "source_path": str(sol_file.resolve()),
+        "duration_ms": comp_res.duration_ms,
+    }
 
 
 def compile_and_run_direct(

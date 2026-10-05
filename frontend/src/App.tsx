@@ -9,7 +9,7 @@ import { TestRunnerDrawer } from '@/components/runner/TestRunnerDrawer';
 import { CompilerOutputView } from '@/components/runner/CompilerOutputView';
 import { TerminalDrawer } from '@/components/terminal/TerminalDrawer';
 import { DebuggerPanel } from '@/components/debugger/DebuggerPanel';
-import { useDAP } from '@/components/debugger/useDAP';
+import { useDebugger, debugShortcutAction } from '@/components/debugger/useDebugger';
 import { SolutionModal } from '@/components/problem/SolutionModal';
 import { TopicNavTabs, TopicViewMode } from '@/components/curriculum/TopicNavTabs';
 import { ConceptLessonViewer } from '@/components/concept/ConceptLessonViewer';
@@ -22,6 +22,7 @@ import {
   runVerification,
   compileAndRunExercise,
   resetExercise,
+  fetchToolsStatus,
 } from '@/lib/api';
 import {
   TopicSummary,
@@ -29,7 +30,10 @@ import {
   ExerciseDetail,
   VerificationResult,
   CompileRunResult,
+  ToolsStatus,
+  DebugVariable,
 } from '@/lib/types';
+import type { DebugOutputStream } from '@/components/terminal/useTerminal';
 import { useSSE } from '@/lib/useEvents';
 import { Play, Bug, Terminal, Cpu } from 'lucide-react';
 
@@ -56,6 +60,14 @@ export function App() {
 
   // Breakpoints in editor
   const [breakpoints, setBreakpoints] = useState<number[]>([]);
+  // Line the debuggee is stopped on (FR-015)
+  const [activeLine, setActiveLine] = useState<number | null>(null);
+  // Toolchain diagnostics; gates the start control (FR-008)
+  const [toolsStatus, setToolsStatus] = useState<ToolsStatus | null>(null);
+  // The terminal registers its debug-output writer here (FR-016)
+  const [writeDebugOutput, setWriteDebugOutput] = useState<
+    ((stream: DebugOutputStream, text: string) => void) | null
+  >(null);
 
   // Two-way editor sync
   const { code, status: saveStatus, handleCodeChange, saveNow } = useEditorSync({
@@ -66,28 +78,84 @@ export function App() {
     },
   });
 
-  // DAP Debugger hook
+  // Debugger hook (GDB/MI over /ws/debug)
   const {
     debugState,
-    activeLine,
     callStack,
     variables,
     statusMessage: debugStatusMessage,
+    remediation: debugRemediation,
+    appliedBreakpoints,
+    requestedBreakpoints,
     startDebug,
-    continueExec,
+    continueDebug,
     stepOver,
     stepInto,
     stepOut,
-    pauseExec,
+    pauseDebug,
     stopDebug,
-  } = useDAP({
+    selectFrame,
+    expandVariable,
+  } = useDebugger({
     exerciseId: selectedExerciseId,
+    active: activeBottomTab === 'debugger',
+    onActiveLineChange: (line) => setActiveLine(line),
+    onOutput: (stream, text) => writeDebugOutput?.(stream, text),
   });
+
+  // Variable tree expansion state: the server owns handles, the client owns
+  // which ones are open and what their children are.
+  const [expandedHandles, setExpandedHandles] = useState<Set<string>>(new Set());
+  const [childrenByHandle, setChildrenByHandle] = useState<Record<string, DebugVariable[]>>({});
+  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+
+  // A new stop invalidates every handle the server released.
+  useEffect(() => {
+    setExpandedHandles(new Set());
+    setChildrenByHandle({});
+    setSelectedFrameId(null);
+  }, [debugState, activeLine]);
+
+  const handleExpandVariable = useCallback(
+    (handle: string) => {
+      setExpandedHandles((prev) => {
+        const next = new Set(prev);
+        if (next.has(handle)) {
+          next.delete(handle);
+          return next;
+        }
+        next.add(handle);
+        return next;
+      });
+      setChildrenByHandle((prev) => {
+        if (prev[handle]) return prev;
+        expandVariable(handle);
+        return prev;
+      });
+    },
+    [expandVariable],
+  );
 
   const handleToggleBreakpoint = useCallback((line: number) => {
     setBreakpoints((prev) =>
       prev.includes(line) ? prev.filter((l) => l !== line) : [...prev, line].sort((a, b) => a - b)
     );
+  }, []);
+
+  // Toolchain diagnostics decide whether debugging can start at all (FR-008)
+  useEffect(() => {
+    let mounted = true;
+    fetchToolsStatus()
+      .then((status) => {
+        if (mounted) setToolsStatus(status);
+      })
+      .catch(() => {
+        // Diagnostics failing must not break the rest of the dashboard.
+        if (mounted) setToolsStatus(null);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Load curriculum catalog & exercises
@@ -176,10 +244,15 @@ export function App() {
   // Start debugger
   const handleStartDebug = useCallback(async () => {
     if (!selectedExerciseId) return;
+    // FR-008: never attempt a launch when the engine is unusable.
+    if (toolsStatus && !toolsStatus.debugger.available) return;
     await saveNow();
     setActiveBottomTab('debugger');
-    startDebug(breakpoints);
-  }, [selectedExerciseId, saveNow, startDebug, breakpoints]);
+    // The server resolves the authoritative absolute source path from the debug
+    // build; the client only supplies the workspace-relative path.
+    const relpath = currentExercise?.solution_relpath ?? '';
+    startDebug(breakpoints.map((line) => ({ file: relpath, line })));
+  }, [selectedExerciseId, saveNow, startDebug, breakpoints, toolsStatus, currentExercise]);
 
   // Reset exercise starter stub
   const handleReset = useCallback(async () => {
@@ -229,49 +302,38 @@ export function App() {
         return;
       }
 
-      // F5: Start / Continue Debugging
-      if (e.key === 'F5') {
+      // Debug shortcuts: F5 start/continue, F10/F11/Shift+F11 step, Shift+F5 stop.
+      // The gating rules live in debugShortcutAction so they are unit-testable.
+      const debugAction = debugShortcutAction(e.key, e.shiftKey, debugState);
+      if (debugAction) {
         e.preventDefault();
-        if (debugState === 'STOPPED') {
-          continueExec();
-        } else if (debugState === 'IDLE' || debugState === 'TERMINATED') {
-          handleStartDebug();
+        switch (debugAction) {
+          case 'start':
+            handleStartDebug();
+            break;
+          case 'continue':
+            continueDebug();
+            break;
+          case 'step_over':
+            stepOver();
+            break;
+          case 'step_into':
+            stepInto();
+            break;
+          case 'step_out':
+            stepOut();
+            break;
+          case 'stop':
+            stopDebug();
+            break;
         }
-        return;
-      }
-
-      // F10: Step Over
-      if (e.key === 'F10' && debugState === 'STOPPED') {
-        e.preventDefault();
-        stepOver();
-        return;
-      }
-
-      // F11: Step Into
-      if (e.key === 'F11' && debugState === 'STOPPED') {
-        e.preventDefault();
-        stepInto();
-        return;
-      }
-
-      // Shift+F11: Step Out
-      if (e.shiftKey && e.key === 'F11' && debugState === 'STOPPED') {
-        e.preventDefault();
-        stepOut();
-        return;
-      }
-
-      // Shift+F5: Stop Debugging
-      if (e.shiftKey && e.key === 'F5' && debugState !== 'IDLE') {
-        e.preventDefault();
-        stopDebug();
         return;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleRun, handleDirectRun, handleStartDebug, debugState, continueExec, stepOver, stepInto, stepOut, stopDebug]);
+  }, [handleRun, handleDirectRun, handleStartDebug, debugState, continueDebug, stepOver, stepInto, stepOut, stopDebug]);
 
   const solvedCount = exercises.filter((e) => e.status === 'COMPLETED').length;
   const isCurrentCompleted = currentExercise?.status === 'COMPLETED';
@@ -340,7 +402,10 @@ export function App() {
           <CompilerOutputView result={compileResult} isRunning={isDirectRunning} />
         )}
         {activeBottomTab === 'terminal' && (
-          <TerminalDrawer active={activeBottomTab === 'terminal'} />
+          <TerminalDrawer
+            active={activeBottomTab === 'terminal'}
+            onDebugWriterReady={setWriteDebugOutput}
+          />
         )}
         {activeBottomTab === 'debugger' && (
           <DebuggerPanel
@@ -348,13 +413,25 @@ export function App() {
             callStack={callStack}
             variables={variables}
             statusMessage={debugStatusMessage}
-            onContinue={continueExec}
-            onPause={pauseExec}
+            remediation={debugRemediation}
+            availability={{
+              available: toolsStatus?.debugger.available ?? true,
+              remediation: toolsStatus?.debugger.remediation ?? null,
+            }}
+            selectedFrameId={selectedFrameId}
+            expandedHandles={expandedHandles}
+            childrenByHandle={childrenByHandle}
+            appliedBreakpoints={appliedBreakpoints}
+            requestedBreakpoints={requestedBreakpoints}
+            onContinue={continueDebug}
+            onPause={pauseDebug}
             onStepOver={stepOver}
             onStepInto={stepInto}
             onStepOut={stepOut}
             onStop={stopDebug}
             onStart={handleStartDebug}
+            onSelectFrame={selectFrame}
+            onExpandVariable={handleExpandVariable}
           />
         )}
       </div>

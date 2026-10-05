@@ -47,3 +47,20 @@ CREATE TABLE IF NOT EXISTS visualizer_progress (
     explored_operations_json TEXT NOT NULL DEFAULT '[]',
     last_visited_at TEXT NOT NULL
 );
+
+-- Debugger breakpoints (FR-011, FR-012).
+-- `anchor_hash` and `anchor_line_text` are what make a breakpoint survive an edit
+-- above it: a stored line number alone would silently slide onto the wrong
+-- statement as soon as a line is inserted higher up the file.
+CREATE TABLE IF NOT EXISTS breakpoints (
+    id TEXT PRIMARY KEY,
+    exercise_id TEXT NOT NULL,
+    file_relpath TEXT NOT NULL,
+    line INTEGER NOT NULL CHECK(line >= 1),
+    anchor_hash TEXT NOT NULL,
+    anchor_line_text TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(exercise_id, file_relpath, line)
+);
+
+CREATE INDEX IF NOT EXISTS idx_breakpoints_exercise ON breakpoints(exercise_id);

@@ -2,20 +2,34 @@ import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import { useTerminal } from './useTerminal';
+import { useTerminal, type DebugOutputStream } from './useTerminal';
 import { RotateCw, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface TerminalDrawerProps {
   active: boolean;
+  /** Registers the debug-output writer so the debugger can reach the terminal. */
+  onDebugWriterReady?: (writer: ((stream: DebugOutputStream, text: string) => void) | null) => void;
 }
 
-export function TerminalDrawer({ active }: TerminalDrawerProps) {
+/** Theme colours are the project's design tokens (SC-003, FR-021). */
+const DEBUG_STREAM_PREFIX: Record<DebugOutputStream, string> = {
+  console: '\x1b[90m[debugger]\x1b[0m ',
+  stderr: '\x1b[31m[stderr]\x1b[0m ',
+  target: '\x1b[32m[program]\x1b[0m ',
+};
+
+export function TerminalDrawer({ active, onDebugWriterReady }: TerminalDrawerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const onDebugWriterReadyRef = useRef(onDebugWriterReady);
 
-  const { isConnected, connect, sendInput, sendResize, killSession } = useTerminal({
+  useEffect(() => {
+    onDebugWriterReadyRef.current = onDebugWriterReady;
+  }, [onDebugWriterReady]);
+
+  const { isConnected, connect, sendInput, sendResize, killSession, writeDebugOutput } = useTerminal({
     active,
     onData: (data) => {
       if (termRef.current) {
@@ -27,7 +41,25 @@ export function TerminalDrawer({ active }: TerminalDrawerProps) {
         termRef.current.writeln(`\r\n\x1b[33m[Process completed with exit code ${code}]\x1b[0m\r\n`);
       }
     },
+    onDebug: (stream, text) => {
+      // Direct buffer write. Never routed through sendInput: that would type the
+      // text into the learner's live shell (research.md Decision 8).
+      const term = termRef.current;
+      if (!term) return;
+      const prefixed = text
+        .split('\n')
+        .filter((line) => line.length > 0)
+        .map((line) => DEBUG_STREAM_PREFIX[stream] + line)
+        .join('\r\n');
+      if (prefixed) term.writeln(prefixed);
+    },
   });
+
+  // Hand the writer up once the terminal exists, and release it on unmount.
+  useEffect(() => {
+    onDebugWriterReadyRef.current?.(writeDebugOutput);
+    return () => onDebugWriterReadyRef.current?.(null);
+  }, [writeDebugOutput, active]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -36,19 +68,23 @@ export function TerminalDrawer({ active }: TerminalDrawerProps) {
       cursorBlink: true,
       fontSize: 13,
       fontFamily: 'JetBrains Mono, Menlo, monospace',
+      // xterm reads literal colour values and cannot resolve CSS custom
+      // properties, so these are the design tokens spelled out. They must stay
+      // in step with the `:root` values in globals.css; `tests/test_debug_theme.py`
+      // asserts they match.
       theme: {
-        background: '#0B1220',
-        foreground: '#F8FAFC',
-        cursor: '#38BDF8',
-        selectionBackground: '#334155',
-        black: '#0F172A',
-        red: '#EF4444',
-        green: '#22C55E',
-        yellow: '#F59E0B',
-        blue: '#3B82F6',
-        magenta: '#EC4899',
-        cyan: '#06B6D4',
-        white: '#F8FAFC',
+        background: '#0F172A',   // --color-background
+        foreground: '#F8FAFC',   // --color-foreground
+        cursor: '#22C55E',       // --color-accent
+        selectionBackground: '#334155', // --color-border
+        black: '#1B2336',        // --color-card
+        red: '#EF4444',          // --color-destructive
+        green: '#22C55E',        // --color-accent
+        yellow: '#F8FAFC',       // --color-foreground
+        blue: '#334155',         // --color-border
+        magenta: '#22C55E',      // --color-accent
+        cyan: '#94A3B8',         // --color-muted-foreground
+        white: '#F8FAFC',        // --color-foreground
       },
     });
 
@@ -106,13 +142,13 @@ export function TerminalDrawer({ active }: TerminalDrawerProps) {
   }, [active, sendResize]);
 
   return (
-    <div className="h-full flex flex-col bg-[#0B1220]">
+    <div className="debug-surface h-full flex flex-col">
       {/* Terminal Toolbar */}
-      <div className="px-3 py-1.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/60 text-xs">
+      <div className="debug-pane-header px-3 py-1.5 border-b flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-slate-300">Host Terminal Session</span>
+          <span className="font-mono text-foreground">Host Terminal Session</span>
           <span
-            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-rose-400'}`}
+            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-accent' : 'bg-destructive'}`}
             title={isConnected ? 'Connected' : 'Disconnected'}
           />
         </div>
@@ -122,20 +158,20 @@ export function TerminalDrawer({ active }: TerminalDrawerProps) {
             variant="ghost"
             size="sm"
             onClick={connect}
-            className="h-6 px-2 text-[11px] text-slate-400 hover:text-white"
+            className="debug-focusable h-6 px-2 text-[11px]"
             title="Reconnect terminal"
           >
-            <RotateCw className="w-3 h-3 mr-1" /> Reconnect
+            <RotateCw className="w-3 h-3 mr-1" aria-hidden="true" /> Reconnect
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={killSession}
-            className="h-6 px-2 text-[11px] text-rose-400 hover:text-rose-300"
+            className="debug-focusable h-6 px-2 text-[11px] text-destructive hover:text-destructive"
             title="Kill running shell"
           >
-            <XCircle className="w-3 h-3 mr-1" /> Kill
+            <XCircle className="w-3 h-3 mr-1" aria-hidden="true" /> Kill
           </Button>
         </div>
       </div>
