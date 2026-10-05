@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #1e293b;
+    --color-on-primary: #ffffff;
+    --color-secondary: #334155;
+    --color-on-secondary: #ffffff;
+    --color-accent: #22c55e;
+    --color-on-accent: #0f172a;
+    --color-background: #0f172a;
+    --color-foreground: #f8fafc;
+    --color-card: #1b2336;
+    --color-card-foreground: #f8fafc;
+    --color-muted: #272f42;
+    --color-muted-foreground: #94a3b8;
+    --color-border: #334155;
+    --color-destructive: #ef4444;
+    --color-on-destructive: #000000;
+    --color-ring: #ffffff;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+/* Custom Scrollbar for dense dashboard */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

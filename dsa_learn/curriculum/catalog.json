@@ -1,0 +1,138 @@
+{
+  "topics": [
+    {
+      "id": "arrays-hashing",
+      "slug": "arrays-hashing",
+      "title": "Arrays & Hashing",
+      "description": "Fundamental array operations, hash maps, frequency tables, and subarray prefix techniques.",
+      "display_order": 1,
+      "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
+      "exercises": [
+        {
+          "id": "two-sum",
+          "slug": "two-sum",
+          "title": "Two Sum",
+          "difficulty": "Easy",
+          "time_complexity_target": "O(N)",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/arrays-hashing/two-sum/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/arrays-hashing/two-sum/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/arrays-hashing/two-sum/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/arrays-hashing/two-sum/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "max-subarray",
+          "slug": "max-subarray",
+          "title": "Maximum Subarray (Kadane)",
+          "difficulty": "Medium",
+          "time_complexity_target": "O(N)",
+          "space_complexity_target": "O(1)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/arrays-hashing/max-subarray/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/arrays-hashing/max-subarray/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/arrays-hashing/max-subarray/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/arrays-hashing/max-subarray/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        }
+      ]
+    },
+    {
+      "id": "two-pointers",
+      "slug": "two-pointers",
+      "title": "Two Pointers",
+      "description": "Converging and sliding indices for linear-time array and string evaluations.",
+      "display_order": 2,
+      "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
+      "exercises": [
+        {
+          "id": "valid-palindrome",
+          "slug": "valid-palindrome",
+          "title": "Valid Palindrome",
+          "difficulty": "Easy",
+          "time_complexity_target": "O(N)",
+          "space_complexity_target": "O(1)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/two-pointers/valid-palindrome/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/two-pointers/valid-palindrome/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/two-pointers/valid-palindrome/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/two-pointers/valid-palindrome/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        }
+      ]
+    },
+    {
+      "id": "linked-lists",
+      "slug": "linked-lists",
+      "title": "Linked Lists",
+      "description": "Pointer manipulation, node reversal, cycle detection, and list traversal.",
+      "display_order": 3,
+      "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
+      "exercises": [
+        {
+          "id": "reverse-linked-list",
+          "slug": "reverse-linked-list",
+          "title": "Reverse Linked List",
+          "difficulty": "Easy",
+          "time_complexity_target": "O(N)",
+          "space_complexity_target": "O(1)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/linked-lists/reverse-linked-list/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/linked-lists/reverse-linked-list/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/linked-lists/reverse-linked-list/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/linked-lists/reverse-linked-list/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        }
+      ]
+    },
+    {
+      "id": "trees",
+      "slug": "trees",
+      "title": "Trees & Binary Search Trees",
+      "description": "Recursive tree traversals, structural inversions, depths, and search properties.",
+      "display_order": 4,
+      "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
+      "exercises": [
+        {
+          "id": "invert-binary-tree",
+          "slug": "invert-binary-tree",
+          "title": "Invert Binary Tree",
+          "difficulty": "Easy",
+          "time_complexity_target": "O(N)",
+          "space_complexity_target": "O(H)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/trees/invert-binary-tree/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/trees/invert-binary-tree/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/trees/invert-binary-tree/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/trees/invert-binary-tree/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        }
+      ]
+    },
+    {
+      "id": "dynamic-programming",
+      "slug": "dynamic-programming",
+      "title": "Dynamic Programming",
+      "description": "Optimal substructure, memoization, bottom-up tabulation, and state transitions.",
+      "display_order": 5,
+      "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
+      "exercises": [
+        {
+          "id": "climbing-stairs",
+          "slug": "climbing-stairs",
+          "title": "Climbing Stairs",
+          "difficulty": "Easy",
+          "time_complexity_target": "O(N)",
+          "space_complexity_target": "O(1)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/dynamic-programming/climbing-stairs/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/dynamic-programming/climbing-stairs/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/dynamic-programming/climbing-stairs/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/dynamic-programming/climbing-stairs/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        }
+      ]
+    }
+  ]
+}

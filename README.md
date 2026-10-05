@@ -1,0 +1,130 @@
+# DSA Learn: Local Web-Backed C++ DSA Learning Platform
+
+A fast, offline-first, dual-surface platform for practicing Data Structures & Algorithms in modern C++ (C++20).
+
+Learners write and edit standard C++ source files in their own local editor (VS Code, Neovim, CLion), while an automated execution harness and a modern React 19 web dashboard deliver instant multi-tier verification feedback, diagnostic translation, and progress tracking on `localhost`.
+
+---
+
+## Key Features
+
+- **Modern C++ Standard**: Authored in C++20 (`-std=c++20 -O2 -Wall -Wextra -pedantic`) using standard template library (STL) with clean, typed problem contracts.
+- **Dual-Surface Architecture**:
+  - **Local Editor Surface**: Work directly on local `.cpp` files in `exercises/`.
+  - **Visual Dashboard Surface**: Modern React 19 + Tailwind CSS + shadcn/ui dashboard running on `http://localhost:8080`.
+- **Multi-Tier Test Verification**:
+  1. *Tier 1: Functional Correctness* (standard algorithmic test cases).
+  2. *Tier 2: Boundary & Edge Cases* (empty inputs, single elements, extreme numeric values).
+  3. *Tier 3: Complexity & Resource Limits* (stress benchmarks and timeout checks).
+- **Sub-3s Verification Turnaround**: Native `g++` compilation with an embedded zero-dependency test assertion harness (`dsa_test.hpp`).
+- **Actionable Diagnostic Sanitizer**: Automatically translates raw GCC syntax and type errors into plain-language educational hints.
+- **Algorithmic Guardrails**: Hard timeouts (2.0s default) terminate infinite loops safely and capture runtime faults (`SIGSEGV`, `SIGABRT`) without crashing the platform.
+- **100% Offline-First**: Zero cloud dependencies, zero telemetry, local SQLite database (`.dsa/progress.db`).
+- **Live Auto-Run Watcher**: Detects when you save a file in your editor and streams real-time updates via Server-Sent Events (SSE).
+
+---
+
+## Starter Curriculum
+
+The platform ships with 6 curated foundational exercises:
+
+| Topic | Exercise | Difficulty | Target Time | Target Space |
+| :--- | :--- | :--- | :--- | :--- |
+| **Arrays & Hashing** | `two-sum` | Easy | $O(N)$ | $O(N)$ |
+| **Arrays & Hashing** | `max-subarray` | Medium | $O(N)$ | $O(1)$ |
+| **Two Pointers** | `valid-palindrome` | Easy | $O(N)$ | $O(1)$ |
+| **Linked Lists** | `reverse-linked-list` | Easy | $O(N)$ | $O(1)$ |
+| **Trees** | `invert-binary-tree` | Easy | $O(N)$ | $O(H)$ |
+| **Dynamic Programming** | `climbing-stairs` | Easy | $O(N)$ | $O(1)$ |
+
+### Pedagogical Reference & Roadmap.sh Alignment
+
+`dsa-learn` serves as the hands-on local C++ execution companion to the official **[roadmap.sh Data Structures & Algorithms](https://roadmap.sh/datastructures-and-algorithms)** and **[roadmap.sh C++ Developer Roadmap](https://roadmap.sh/cpp)**. While roadmap.sh provides theoretical explanations, visualizations, and knowledge trees, `dsa-learn` provides the local sandbox, C++20 standard library patterns, and automated multi-tier verification.
+
+For the comprehensive 11-module taxonomy, C++20 STL mapping matrix, and curriculum expansion roadmap, see **[`docs/roadmap-reference.md`](docs/roadmap-reference.md)**.
+
+---
+
+## Quickstart
+
+### Prerequisites
+
+- **C++ Compiler**: `g++` (>= 11 supporting C++20) or `clang++` (>= 14).
+- **Python**: Python 3.10+ (standard library only; no pip dependencies required).
+- **Node.js** (Optional, only needed if modifying/building frontend source): Node 18+.
+
+### 1. Verify Environment
+
+```bash
+./dsa-learn version
+```
+
+### 2. View Curriculum & Progress
+
+```bash
+./dsa-learn list
+```
+
+### 3. Practice an Exercise in Terminal
+
+Edit your solution in `exercises/arrays-hashing/two-sum/solution.cpp`:
+
+```bash
+./dsa-learn test two-sum
+```
+
+To run with verbose test output:
+```bash
+./dsa-learn test two-sum --verbose
+```
+
+### 4. Launch Web Dashboard
+
+```bash
+./dsa-learn serve
+```
+Open [http://localhost:8080](http://localhost:8080) to browse problems, track progress, and view live test results.
+
+### 5. Reset an Exercise or View Reference Solution
+
+```bash
+# Restore original starter template
+./dsa-learn reset two-sum --force
+
+# View canonical reference solution
+./dsa-learn solution two-sum --confirm
+```
+
+---
+
+## Project Structure
+
+```text
+├── dsa-learn                          # CLI launcher script
+├── dsa_learn/                         # Core Python platform engine
+│   ├── config.py                      # Path configuration & defaults
+│   ├── cli/                           # CLI command handlers (test, list, serve, reset)
+│   ├── curriculum/                    # Curriculum catalog & protected test suites
+│   ├── runner/                        # C++ compiler wrapper, sandbox, dsa_test.hpp
+│   ├── server/                        # HTTP API server, SSE watcher, static file server
+│   └── storage/                       # SQLite schema & repository (.dsa/progress.db)
+├── exercises/                         # Learner workspace (edit your solutions here)
+├── frontend/                          # React 19 + TypeScript + Vite + Tailwind dashboard
+│   ├── src/components/                # shadcn/ui primitives, split-pane layout, runner drawer
+│   └── dist/                          # Pre-built standalone static assets
+└── tests/                             # Automated Python test suites
+```
+
+---
+
+## Running Platform Tests
+
+```bash
+python3 -m unittest discover tests
+```
+
+---
+
+## License
+
+MIT
