@@ -18,6 +18,13 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/ws': {
+        target: 'ws://localhost:8080',
+        ws: true,
+      },
     },
+  },
+  optimizeDeps: {
+    include: ['monaco-editor', '@monaco-editor/react', '@xterm/xterm', '@xterm/addon-fit'],
   },
 });

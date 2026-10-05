@@ -77,6 +77,31 @@ def group_tiers(tests_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return result_tiers
 
 
+def aggregate_foundation_methods(tests_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Group tests by component/method for foundation exercises."""
+    method_map: dict[str, list[dict[str, Any]]] = {}
+    for t in tests_list:
+        comp = t.get("component")
+        if not comp:
+            tier = t.get("tier", "")
+            if tier.startswith("Foundation: "):
+                comp = tier.split("Foundation: ", 1)[1].strip()
+        if comp:
+            method_map.setdefault(comp, []).append(t)
+
+    methods = []
+    for comp, items in method_map.items():
+        passed = sum(1 for x in items if x.get("passed"))
+        methods.append({
+            "name": comp,
+            "total": len(items),
+            "passed": passed,
+            "status": "PASSED" if passed == len(items) and len(items) > 0 else "FAILED",
+            "tests": items,
+        })
+    return methods
+
+
 def run_verification(
     exercise_id: str,
     solution_path: Path | None = None,
@@ -109,6 +134,7 @@ def run_verification(
             "duration_ms": compile_res.duration_ms,
             "summary": {"total": 0, "passed": 0, "failed": 0, "skipped": 0},
             "tiers": [],
+            "methods": [],
             "diagnostics": [d.to_dict() for d in compile_res.diagnostics],
             "raw_output": compile_res.raw_output,
         }
@@ -171,6 +197,7 @@ def run_verification(
                 "duration_ms": duration_ms,
                 "summary": {"total": 0, "passed": 0, "failed": 0, "skipped": 0},
                 "tiers": [],
+                "methods": [],
                 "diagnostics": diag,
                 "raw_output": raw_output,
             }
@@ -204,6 +231,7 @@ def run_verification(
 
         status = "PASSED" if (failed_tests == 0 and total_tests > 0) else "FAILED"
         tiers = group_tiers(tests_list)
+        methods = aggregate_foundation_methods(tests_list)
 
         result = {
             "id": attempt_id,
@@ -218,6 +246,7 @@ def run_verification(
                 "skipped": 0,
             },
             "tiers": tiers,
+            "methods": methods,
             "diagnostics": [],
             "raw_output": raw_output,
         }
@@ -256,6 +285,7 @@ def run_verification(
             "duration_ms": duration_ms,
             "summary": {"total": 0, "passed": 0, "failed": 0, "skipped": 0},
             "tiers": [],
+            "methods": [],
             "diagnostics": diag,
             "raw_output": f"Time Limit Exceeded after {timeout_sec:.1f}s",
         }

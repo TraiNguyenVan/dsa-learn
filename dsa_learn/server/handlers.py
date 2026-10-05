@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from dsa_learn.config import WORKSPACE_ROOT
+from datetime import datetime, timezone
+
+from dsa_learn.config import WORKSPACE_ROOT, get_toolchain_status
 from dsa_learn.runner.executor import find_exercise, load_catalog, run_verification
 from dsa_learn.storage import db
 
@@ -200,3 +202,147 @@ def get_progress_handler() -> tuple[int, dict[str, Any]]:
         "overall_completion_rate": round(overall_rate, 1),
         "topics": topics_stat,
     }
+
+
+def get_tools_handler() -> tuple[int, dict[str, Any]]:
+    """GET /api/tools - Host toolchain inspection."""
+    return 200, get_toolchain_status()
+
+
+def put_code_handler(exercise_id: str, body_bytes: bytes) -> tuple[int, dict[str, Any]]:
+    """PUT /api/exercises/{id}/code - Save in-browser code to solution.cpp."""
+    try:
+        ex = find_exercise(exercise_id)
+    except KeyError:
+        return 404, {"error": f"Exercise '{exercise_id}' not found"}
+
+    try:
+        payload = json.loads(body_bytes.decode("utf-8"))
+        code = payload.get("code")
+        if code is None:
+            return 400, {"error": "Missing 'code' field in request body"}
+    except Exception as e:
+        return 400, {"error": f"Invalid JSON payload: {e}"}
+
+    target_path = WORKSPACE_ROOT / ex["starter_relpath"]
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(code, encoding="utf-8")
+
+    return 200, {
+        "status": "ok",
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+        "file_path": ex["starter_relpath"],
+    }
+
+
+def post_compile_run_handler(exercise_id: str, body_bytes: bytes) -> tuple[int, dict[str, Any]]:
+    """POST /api/exercises/{id}/compile-run - Directly execute solution with optional stdin."""
+    from dsa_learn.runner.compiler import compile_and_run_direct
+
+    custom_stdin = ""
+    timeout_ms = 3000
+
+    if body_bytes:
+        try:
+            payload = json.loads(body_bytes.decode("utf-8"))
+            custom_stdin = payload.get("stdin", "")
+            timeout_ms = int(payload.get("timeout_ms", 3000))
+        except Exception:
+            pass
+
+    try:
+        res = compile_and_run_direct(exercise_id, custom_stdin, timeout_ms)
+        return 200, res
+    except KeyError:
+        return 404, {"error": f"Exercise '{exercise_id}' not found"}
+
+
+def get_topic_lesson_handler(topic_id: str) -> tuple[int, dict[str, Any]]:
+    """GET /api/curriculum/topics/{topic_id}/lesson - Return structured lesson & Big-O matrix."""
+    from dsa_learn.curriculum.loader import get_topic_lesson
+
+    lesson = get_topic_lesson(topic_id)
+    if not lesson:
+        return 404, {"error": f"Topic '{topic_id}' not found"}
+    return 200, lesson
+
+
+def post_lesson_progress_handler(topic_id: str, body_bytes: bytes) -> tuple[int, dict[str, Any]]:
+    """POST /api/curriculum/topics/{topic_id}/lesson/progress - Update section completion."""
+    from dsa_learn.curriculum.loader import get_topic_lesson
+
+    try:
+        payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+    except Exception:
+        return 400, {"error": "Invalid JSON body"}
+
+    section_id = payload.get("section_id")
+    if not section_id:
+        return 400, {"error": "Missing 'section_id'"}
+
+    mark_completed = bool(payload.get("mark_completed", True))
+    lesson = get_topic_lesson(topic_id)
+    total_sections = len(lesson.get("sections", [])) if lesson else 1
+
+    updated = db.update_lesson_progress(
+        topic_id, section_id, mark_completed=mark_completed, total_sections=total_sections
+    )
+    return 200, updated
+
+
+def post_visualizer_progress_handler(topic_id: str, body_bytes: bytes) -> tuple[int, dict[str, Any]]:
+    """POST /api/curriculum/topics/{topic_id}/visualizer/progress - Record explored operations."""
+    try:
+        payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+    except Exception:
+        return 400, {"error": "Invalid JSON body"}
+
+    operation_id = payload.get("operation_id")
+    if not operation_id:
+        return 400, {"error": "Missing 'operation_id'"}
+
+    explored = db.record_visualizer_operation(topic_id, operation_id)
+    return 200, {"topic_id": topic_id, "explored_operations": explored}
+
+
+def get_patterns_handler(query: dict[str, list[str]]) -> tuple[int, dict[str, Any]]:
+    """GET /api/patterns - Return algorithmic pattern blueprints and decision matrix."""
+    from dsa_learn.curriculum.loader import get_patterns_catalog
+
+    topic_id = query.get("topic_id", [None])[0]
+    data = get_patterns_catalog(topic_id=topic_id)
+    return 200, data
+
+
+def get_exercise_hints_handler(topic_id: str, exercise_id: str) -> tuple[int, dict[str, Any]]:
+    """GET /api/exercises/{topic_id}/{exercise_id}/hints - Return progressive hints with unlock states."""
+    from dsa_learn.curriculum.loader import get_exercise_hints
+
+    hints_data = get_exercise_hints(topic_id, exercise_id)
+    return 200, hints_data
+
+
+def post_unlock_hint_handler(topic_id: str, exercise_id: str) -> tuple[int, dict[str, Any]]:
+    """POST /api/exercises/{topic_id}/{exercise_id}/hints/unlock - Unlock next progressive hint tier."""
+    from dsa_learn.curriculum.loader import get_exercise_hints
+
+    hints_data = get_exercise_hints(topic_id, exercise_id)
+    hints = hints_data.get("hints", [])
+
+    next_hint = next((h for h in hints if not h.get("is_unlocked")), None)
+    if not next_hint:
+        return 400, {"error": "All hints already unlocked"}
+
+    tier_to_unlock = next_hint["tier"]
+    db.unlock_hint(exercise_id, tier_to_unlock)
+
+    # Re-fetch with unlocked content
+    updated_data = get_exercise_hints(topic_id, exercise_id)
+    unlocked_hint = next((h for h in updated_data["hints"] if h["tier"] == tier_to_unlock), None)
+
+    return 200, {
+        "unlocked_tier": tier_to_unlock,
+        "hint": unlocked_hint,
+    }
+
+

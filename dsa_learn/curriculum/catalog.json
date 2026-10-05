@@ -9,6 +9,41 @@
       "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
       "exercises": [
         {
+          "id": "dynamic-array",
+          "slug": "dynamic-array",
+          "title": "Design Dynamic Array (Vector)",
+          "difficulty": "Easy",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) amortized append, O(1) random access",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/arrays-hashing/dynamic-array/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/arrays-hashing/dynamic-array/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/arrays-hashing/dynamic-array/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/arrays-hashing/dynamic-array/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms",
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Capacity vs Size Tracking",
+              "content_markdown": "Keep track of two distinct variables: `length` (current count of stored items) and `capacity` (allocated heap buffer size). When `length == capacity`, double the capacity."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Geometric Growth & Memory Management",
+              "content_markdown": "1. Initialize with `new int[capacity]`.\n2. In `push_back`: if `length == capacity`, allocate `new int[capacity * 2]`, copy old elements over, deallocate old buffer with `delete[] data`, and point `data` to new buffer.\n3. In destructor `~DynamicArray()`: execute `delete[] data` to avoid leaks."
+            },
+            {
+              "tier": 3,
+              "type": "PSEUDOCODE",
+              "title": "Class Implementation Blueprint",
+              "content_markdown": "```cpp\nclass DynamicArray {\n    int* data;\n    int capacity;\n    int length;\npublic:\n    DynamicArray(int cap = 2) : capacity(cap), length(0) { data = new int[capacity]; }\n    ~DynamicArray() { delete[] data; }\n    void push_back(int n) {\n        if (length == capacity) resize();\n        data[length++] = n;\n    }\n    int pop_back() { return data[--length]; }\n    int get(int i) const { return data[i]; }\n    void set(int i, int n) { data[i] = n; }\n    int size() const { return length; }\n    int get_capacity() const { return capacity; }\n};\n```"
+            }
+          ]
+        },
+        {
           "id": "two-sum",
           "slug": "two-sum",
           "title": "Two Sum",
@@ -380,6 +415,41 @@
       "display_order": 6,
       "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
       "exercises": [
+        {
+          "id": "singly-linked-list",
+          "slug": "singly-linked-list",
+          "title": "Design Singly Linked List",
+          "difficulty": "Easy",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) insert head, O(N) get/remove",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 2000,
+          "starter_relpath": "exercises/linked-lists/singly-linked-list/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/linked-lists/singly-linked-list/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/linked-lists/singly-linked-list/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/linked-lists/singly-linked-list/problem.md",
+          "reference_url": "https://roadmap.sh/datastructures-and-algorithms",
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Node & Head Pointers",
+              "content_markdown": "Define a `ListNode` struct with `val` and `next`. Maintain a `head` pointer and an integer `size` in your `LinkedList` class."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Edge Handling & Traversal",
+              "content_markdown": "1. `insertHead`: allocate a new node, point its `next` to `head`, then update `head`.\n2. `insertTail`: if `!head`, set `head = node`. Otherwise traverse until `curr->next == nullptr` and link.\n3. `remove`: check `0 <= index < size`. For head removal, update `head = head->next`. For other positions, stop at `index - 1`, splice out `curr->next`, and `delete` the removed node."
+            },
+            {
+              "tier": 3,
+              "type": "PSEUDOCODE",
+              "title": "Complete Class Blueprint",
+              "content_markdown": "```cpp\nclass LinkedList {\n    ListNode* head;\n    int size;\npublic:\n    LinkedList() : head(nullptr), size(0) {}\n    ~LinkedList() {\n        while (head) { ListNode* t = head; head = head->next; delete t; }\n    }\n    int get(int i) const {\n        if (i < 0 || i >= size) return -1;\n        ListNode* c = head;\n        for (int k = 0; k < i; ++k) c = c->next;\n        return c->val;\n    }\n    void insertHead(int v) { ListNode* n = new ListNode(v); n->next = head; head = n; size++; }\n    void insertTail(int v) { /* traverse and link */ size++; }\n    bool remove(int i) { /* unlink and delete */ size--; return true; }\n    std::vector<int> getValues() const { /* collect into vector */ }\n};\n```"
+            }
+          ]
+        },
         {
           "id": "reverse-linked-list",
           "slug": "reverse-linked-list",

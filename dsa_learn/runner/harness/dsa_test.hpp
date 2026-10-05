@@ -22,6 +22,7 @@ struct TestFailure {
 
 struct TestResult {
     std::string tier;
+    std::string component;
     std::string name;
     bool passed;
     long long duration_us;
@@ -35,6 +36,7 @@ public:
     bool current_test_failed = false;
     std::string current_test_name;
     std::string current_tier;
+    std::string current_component;
     TestFailure failure_details;
 
     void fail(const std::string& expected, const std::string& actual,
@@ -55,6 +57,7 @@ class TestRegistry {
 public:
     struct TestCase {
         std::string tier;
+        std::string component;
         std::string name;
         std::function<void()> func;
     };
@@ -64,14 +67,21 @@ public:
         return tests;
     }
 
+    static void add_test(const std::string& tier, const std::string& component, const std::string& name, std::function<void()> func) {
+        get_tests().push_back({tier, component, name, func});
+    }
+
     static void add_test(const std::string& tier, const std::string& name, std::function<void()> func) {
-        get_tests().push_back({tier, name, func});
+        get_tests().push_back({tier, "", name, func});
     }
 };
 
 struct AutoRegister {
+    AutoRegister(const std::string& tier, const std::string& component, const std::string& name, std::function<void()> func) {
+        TestRegistry::add_test(tier, component, name, func);
+    }
     AutoRegister(const std::string& tier, const std::string& name, std::function<void()> func) {
-        TestRegistry::add_test(tier, name, func);
+        TestRegistry::add_test(tier, "", name, func);
     }
 };
 
@@ -139,6 +149,11 @@ inline std::string escape_json(const std::string& s) {
 #define TEST_BOUNDARY(name)   TEST_CASE_TIER("Boundary & Edge Cases", name)
 #define TEST_COMPLEXITY(name) TEST_CASE_TIER("Complexity & Resource Limits", name)
 
+#define TEST_FOUNDATION(component_name, test_title) \
+    void CONCAT(test_func_, __LINE__)(); \
+    static dsa::AutoRegister CONCAT(reg_, __LINE__)("Foundation", component_name, test_title, CONCAT(test_func_, __LINE__)); \
+    void CONCAT(test_func_, __LINE__)()
+
 #define ASSERT_EQ(actual, expected) \
     do { \
         auto&& _act = (actual); \
@@ -188,6 +203,7 @@ inline int run_dsa_test_runner(int argc, char* argv[]) {
         ctx.current_test_failed = false;
         ctx.current_test_name = tc.name;
         ctx.current_tier = tc.tier;
+        ctx.current_component = tc.component;
         ctx.failure_details = {};
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -205,6 +221,7 @@ inline int run_dsa_test_runner(int argc, char* argv[]) {
             total_failed++;
             results.push_back({
                 tc.tier,
+                tc.component,
                 tc.name,
                 false,
                 duration,
@@ -214,7 +231,7 @@ inline int run_dsa_test_runner(int argc, char* argv[]) {
             });
         } else {
             total_passed++;
-            results.push_back({tc.tier, tc.name, true, duration, "", "", ""});
+            results.push_back({tc.tier, tc.component, tc.name, true, duration, "", "", ""});
         }
     }
 
@@ -231,6 +248,9 @@ inline int run_dsa_test_runner(int argc, char* argv[]) {
             const auto& r = results[i];
             std::cout << "    {\n";
             std::cout << "      \"tier\": \"" << dsa::escape_json(r.tier) << "\",\n";
+            if (!r.component.empty()) {
+                std::cout << "      \"component\": \"" << dsa::escape_json(r.component) << "\",\n";
+            }
             std::cout << "      \"name\": \"" << dsa::escape_json(r.name) << "\",\n";
             std::cout << "      \"passed\": " << (r.passed ? "true" : "false") << ",\n";
             std::cout << "      \"duration_us\": " << r.duration_us << ",\n";
@@ -249,10 +269,11 @@ inline int run_dsa_test_runner(int argc, char* argv[]) {
                 current_tier = r.tier;
                 std::cout << "\n[" << current_tier << "]\n";
             }
+            std::string prefix = r.component.empty() ? "" : ("[" + r.component + "] ");
             if (r.passed) {
-                std::cout << "  [✓] " << r.name << " (" << r.duration_us << " µs)\n";
+                std::cout << "  [✓] " << prefix << r.name << " (" << r.duration_us << " µs)\n";
             } else {
-                std::cout << "  [✗] " << r.name << " (FAILED)\n";
+                std::cout << "  [✗] " << prefix << r.name << " (FAILED)\n";
                 std::cout << "      Expected: " << r.expected << "\n";
                 std::cout << "      Actual:   " << r.actual << "\n";
                 if (!r.failure_message.empty()) {

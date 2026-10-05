@@ -7,6 +7,7 @@ import {
   Terminal,
   Layers,
   Zap,
+  Blocks,
 } from 'lucide-react';
 import { VerificationResult } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +21,8 @@ interface TestRunnerDrawerProps {
 }
 
 export function TestRunnerDrawer({ result, isExecuting }: TestRunnerDrawerProps) {
-  const [activeTab, setActiveTab] = useState('tiers');
+  const hasMethods = Boolean(result?.methods && result.methods.length > 0);
+  const [activeTab, setActiveTab] = useState(hasMethods ? 'methods' : 'tiers');
 
   if (isExecuting) {
     return (
@@ -91,6 +93,12 @@ export function TestRunnerDrawer({ result, isExecuting }: TestRunnerDrawerProps)
         <div className="flex items-center space-x-2">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="h-7 text-xs">
+              {hasMethods && (
+                <TabsTrigger value="methods" className="h-6 px-2.5 text-indigo-400">
+                  <Blocks className="w-3.5 h-3.5 mr-1" />
+                  Methods ({result.methods!.filter((m) => m.status === 'PASSED').length}/{result.methods!.length})
+                </TabsTrigger>
+              )}
               <TabsTrigger value="tiers" className="h-6 px-2.5">
                 <Layers className="w-3.5 h-3.5 mr-1" />
                 Tiers ({result.summary.passed}/{result.summary.total})
@@ -112,6 +120,94 @@ export function TestRunnerDrawer({ result, isExecuting }: TestRunnerDrawerProps)
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden bg-[#0F172A]">
+        {activeTab === 'methods' && (
+          <ScrollArea className="h-full p-4">
+            {!result.methods || result.methods.length === 0 ? (
+              <div className="text-xs text-slate-500 text-center py-6">
+                No method-level test results available.
+              </div>
+            ) : (
+              <div className="space-y-4 max-w-4xl">
+                {result.methods.map((method) => {
+                  const allPassed = method.status === 'PASSED';
+                  return (
+                    <div
+                      key={method.name}
+                      className={cn(
+                        'border rounded-lg overflow-hidden bg-[#141C2E]/60',
+                        allPassed ? 'border-indigo-500/20' : 'border-red-900/40'
+                      )}
+                    >
+                      <div className="px-3.5 py-2 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-200 font-mono flex items-center gap-1.5">
+                          <Blocks className="w-3.5 h-3.5 text-indigo-400" />
+                          <span>{method.name}()</span>
+                        </span>
+                        <span
+                          className={cn(
+                            'font-mono text-[11px]',
+                            allPassed ? 'text-emerald-400' : 'text-red-400'
+                          )}
+                        >
+                          {method.passed}/{method.total} Passed
+                        </span>
+                      </div>
+
+                      <div className="divide-y divide-slate-800/40">
+                        {method.tests.map((test, idx) => (
+                          <div key={idx} className="p-3 text-xs">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                {test.passed ? (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                                )}
+                                <span
+                                  className={cn(
+                                    'font-medium',
+                                    test.passed ? 'text-slate-300' : 'text-red-300'
+                                  )}
+                                >
+                                  {test.name}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-mono text-slate-500">
+                                {test.duration_us} µs
+                              </span>
+                            </div>
+
+                            {!test.passed && (
+                              <div className="mt-2.5 p-3 rounded bg-slate-950/80 border border-red-900/40 font-mono text-xs space-y-1.5">
+                                {test.expected && (
+                                  <div className="text-emerald-400">
+                                    <span className="text-slate-500 mr-2">Expected:</span>
+                                    {test.expected}
+                                  </div>
+                                )}
+                                {test.actual && (
+                                  <div className="text-red-400">
+                                    <span className="text-slate-500 mr-2">Actual:  </span>
+                                    {test.actual}
+                                  </div>
+                                )}
+                                {test.failure_message && (
+                                  <div className="text-slate-400 text-[11px] pt-1 border-t border-slate-800">
+                                    {test.failure_message}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        )}
         {activeTab === 'tiers' && (
           <ScrollArea className="h-full p-4">
             {result.tiers.length === 0 ? (

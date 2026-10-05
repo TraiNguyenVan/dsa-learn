@@ -19,23 +19,28 @@ Learners write and edit standard C++ source files in their own local editor (VS 
 - **Sub-3s Verification Turnaround**: Native `g++` compilation with an embedded zero-dependency test assertion harness (`dsa_test.hpp`).
 - **Actionable Diagnostic Sanitizer**: Automatically translates raw GCC syntax and type errors into plain-language educational hints.
 - **Algorithmic Guardrails**: Hard timeouts (2.0s default) terminate infinite loops safely and capture runtime faults (`SIGSEGV`, `SIGABRT`) without crashing the platform.
+- **Interactive Theory Lessons & Complexity Matrices**: Detailed conceptual deep-dives, visual memory diagrams (contiguous buffer vs. pointer-linked chains, stack vs. heap), and Big-O operational performance tables (average vs. worst-case time & space).
+- **Interactive Visualizer Steppers**: Step-through state animators for foundational structures (Arrays, Linked Lists, Trees, and Heaps) with scrubber, playback speed controls, and keyboard shortcuts (`Space`, `→`, `←`, `R`).
+- **"Build from Scratch" Foundational Scaffolding**: Dedicated foundational exercises for fundamental data structures (`dynamic-array`, `singly-linked-list`) with method-by-method test breakdown (`TEST_FOUNDATION`) providing targeted feedback on individual member functions.
+- **3-Tier Progressive Hint System**: On-demand hint escalation (Tier 1: Conceptual Nudge -> Tier 2: Algorithmic Strategy -> Tier 3: Pseudocode & Invariants) with confirmation safeguards.
+- **Algorithmic Pattern Blueprints & Decision Matrix**: In-depth blueprints for recurring patterns (Two Pointers, Sliding Window, Fast & Slow Pointers, Monotonic Stack, Backtracking) and an interactive decision matrix matching performance constraints to optimal data structures.
 - **100% Offline-First**: Zero cloud dependencies, zero telemetry, local SQLite database (`.dsa/progress.db`).
 - **Live Auto-Run Watcher**: Detects when you save a file in your editor and streams real-time updates via Server-Sent Events (SSE).
 
 ---
 
-## Curriculum Overview (50 Problems Across 12 Roadmap.sh Topics)
+## Curriculum Overview (52 Problems Across 12 Roadmap.sh Topics)
 
-The platform includes **50 foundational and advanced exercises** covering all core topics from the official [roadmap.sh Data Structures & Algorithms](https://roadmap.sh/datastructures-and-algorithms) roadmap:
+The platform includes **52 foundational and advanced exercises** covering all core topics from the official [roadmap.sh Data Structures & Algorithms](https://roadmap.sh/datastructures-and-algorithms) roadmap:
 
 | # | Topic | Problems Count | Key Problems Included |
 | :-: | :--- | :-: | :--- |
-| 1 | **Arrays & Hashing** | 6 | `two-sum`, `max-subarray`, `contains-duplicate`, `valid-anagram`, `group-anagrams`, `product-of-array-except-self` |
+| 1 | **Arrays & Hashing** | 7 | `dynamic-array` (Foundation), `two-sum`, `max-subarray`, `contains-duplicate`, `valid-anagram`, `group-anagrams`, `product-of-array-except-self` |
 | 2 | **Two Pointers** | 5 | `valid-palindrome`, `two-sum-ii`, `3sum`, `container-with-most-water`, `trapping-rain-water` |
 | 3 | **Sliding Window** | 4 | `best-time-to-buy-and-sell-stock`, `longest-substring-without-repeating`, `character-replacement`, `permutation-in-string` |
 | 4 | **Stack** | 4 | `valid-parentheses`, `min-stack`, `evaluate-reverse-polish-notation`, `daily-temperatures` |
 | 5 | **Binary Search** | 4 | `binary-search`, `search-a-2d-matrix`, `koko-eating-bananas`, `find-minimum-in-rotated-sorted-array` |
-| 6 | **Linked Lists** | 5 | `reverse-linked-list`, `merge-two-sorted-lists`, `reorder-list`, `remove-nth-node-from-end`, `linked-list-cycle` |
+| 6 | **Linked Lists** | 6 | `singly-linked-list` (Foundation), `reverse-linked-list`, `merge-two-sorted-lists`, `reorder-list`, `remove-nth-node-from-end`, `linked-list-cycle` |
 | 7 | **Trees & BSTs** | 6 | `invert-binary-tree`, `maximum-depth`, `same-tree`, `subtree-of-another-tree`, `lowest-common-ancestor-bst`, `level-order-traversal` |
 | 8 | **Tries (Prefix Trees)** | 2 | `implement-trie`, `design-add-and-search-words` |
 | 9 | **Heap / Priority Queue** | 3 | `kth-largest-in-stream`, `last-stone-weight`, `kth-largest-element-in-array` |

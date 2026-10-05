@@ -275,3 +275,88 @@ def compile_exercise(
             raw_output=str(exc),
             duration_ms=duration_ms,
         )
+
+
+def compile_debug_binary(
+    solution_file: Path,
+    test_file: Path,
+    output_binary: Path,
+    compiler: str | None = None,
+) -> CompilerResult:
+    """Compile with debug symbols (-g -O0) for interactive GDB/CodeLLDB sessions."""
+    from dsa_learn.config import DEBUG_COMPILER_FLAGS
+    return compile_exercise(
+        solution_file=solution_file,
+        test_file=test_file,
+        output_binary=output_binary,
+        compiler=compiler,
+        extra_flags=DEBUG_COMPILER_FLAGS,
+    )
+
+
+def compile_and_run_direct(
+    exercise_id: str,
+    custom_stdin: str = "",
+    timeout_ms: int = 3000,
+) -> dict[str, Any]:
+    """Compile exercise and directly execute the binary with stdin and timeout."""
+    from dsa_learn.config import BUILD_DIR, WORKSPACE_ROOT
+    from dsa_learn.runner.executor import find_exercise
+
+    ex = find_exercise(exercise_id)
+    sol_file = WORKSPACE_ROOT / ex["starter_relpath"]
+    test_file = WORKSPACE_ROOT / ex["test_relpath"]
+    out_bin = BUILD_DIR / f"run_{ex['slug']}"
+
+    comp_res = compile_exercise(sol_file, test_file, out_bin)
+    if not comp_res.success or not comp_res.binary_path:
+        return {
+            "status": "COMPILATION_ERROR",
+            "compiler_output": comp_res.raw_output,
+            "program_output": "",
+            "exit_code": 1,
+            "duration_ms": comp_res.duration_ms,
+        }
+
+    start_exec = time.perf_counter()
+    timeout_sec = max(timeout_ms / 1000.0, 0.5)
+
+    try:
+        run_proc = subprocess.run(
+            [str(comp_res.binary_path)],
+            input=custom_stdin,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout_sec,
+        )
+        duration_ms = int((time.perf_counter() - start_exec) * 1000)
+        status = "SUCCESS" if run_proc.returncode == 0 else "RUNTIME_ERROR"
+        prog_output = run_proc.stdout + ("\n" + run_proc.stderr if run_proc.stderr else "")
+
+        return {
+            "status": status,
+            "compiler_output": comp_res.raw_output,
+            "program_output": prog_output.strip(),
+            "exit_code": run_proc.returncode,
+            "duration_ms": duration_ms,
+        }
+    except subprocess.TimeoutExpired:
+        duration_ms = int((time.perf_counter() - start_exec) * 1000)
+        return {
+            "status": "TIMEOUT",
+            "compiler_output": comp_res.raw_output,
+            "program_output": f"Execution timed out after {timeout_ms}ms.",
+            "exit_code": None,
+            "duration_ms": duration_ms,
+        }
+    except Exception as exc:
+        duration_ms = int((time.perf_counter() - start_exec) * 1000)
+        return {
+            "status": "RUNTIME_ERROR",
+            "compiler_output": comp_res.raw_output,
+            "program_output": str(exc),
+            "exit_code": 1,
+            "duration_ms": duration_ms,
+        }
+

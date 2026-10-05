@@ -183,3 +183,202 @@ def get_history(exercise_id: str, limit: int = 10, db_path: Path | None = None) 
         return history
     finally:
         conn.close()
+
+
+def get_lesson_progress(topic_id: str, db_path: Path | None = None) -> dict[str, Any]:
+    """Retrieve reading progress and completed sections for a topic lesson."""
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        cur = conn.execute(
+            """
+            SELECT topic_id, completed_sections_json, last_read_section, reading_progress_pct, completed_at, updated_at
+            FROM lesson_progress
+            WHERE topic_id = ?
+            """,
+            (topic_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return {
+                "topic_id": topic_id,
+                "completed_sections": [],
+                "last_read_section": None,
+                "progress_pct": 0,
+                "completed_at": None,
+                "updated_at": "",
+            }
+        completed = json.loads(row["completed_sections_json"]) if row["completed_sections_json"] else []
+        return {
+            "topic_id": row["topic_id"],
+            "completed_sections": completed,
+            "last_read_section": row["last_read_section"],
+            "progress_pct": row["reading_progress_pct"],
+            "completed_at": row["completed_at"],
+            "updated_at": row["updated_at"],
+        }
+    finally:
+        conn.close()
+
+
+def update_lesson_progress(
+    topic_id: str,
+    section_id: str,
+    mark_completed: bool = True,
+    total_sections: int = 1,
+    db_path: Path | None = None,
+) -> dict[str, Any]:
+    """Update section reading status and recompute overall topic progress percentage."""
+    init_db(db_path)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    conn = get_db(db_path)
+
+    with conn:
+        cur = conn.execute(
+            "SELECT completed_sections_json, completed_at FROM lesson_progress WHERE topic_id = ?",
+            (topic_id,),
+        )
+        row = cur.fetchone()
+
+        completed_set = set()
+        completed_at = None
+        if row:
+            if row["completed_sections_json"]:
+                completed_set = set(json.loads(row["completed_sections_json"]))
+            completed_at = row["completed_at"]
+
+        if mark_completed:
+            completed_set.add(section_id)
+        else:
+            completed_set.discard(section_id)
+
+        completed_list = sorted(list(completed_set))
+        pct = int((len(completed_list) / max(total_sections, 1)) * 100)
+        pct = min(100, max(0, pct))
+        if pct == 100 and not completed_at:
+            completed_at = now_iso
+        elif pct < 100:
+            completed_at = None
+
+        completed_json = json.dumps(completed_list)
+
+        if row:
+            conn.execute(
+                """
+                UPDATE lesson_progress
+                SET completed_sections_json = ?, last_read_section = ?, reading_progress_pct = ?, completed_at = ?, updated_at = ?
+                WHERE topic_id = ?
+                """,
+                (completed_json, section_id, pct, completed_at, now_iso, topic_id),
+            )
+        else:
+            conn.execute(
+                """
+                INSERT INTO lesson_progress (topic_id, completed_sections_json, last_read_section, reading_progress_pct, completed_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (topic_id, completed_json, section_id, pct, completed_at, now_iso),
+            )
+
+    conn.close()
+    return {
+        "topic_id": topic_id,
+        "completed_sections": completed_list,
+        "last_read_section": section_id,
+        "progress_pct": pct,
+        "completed_at": completed_at,
+        "updated_at": now_iso,
+    }
+
+
+def get_hint_history(exercise_id: str, db_path: Path | None = None) -> list[int]:
+    """Retrieve list of unlocked hint tiers for an exercise (e.g. [1, 2])."""
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        cur = conn.execute(
+            """
+            SELECT tier FROM hint_history
+            WHERE exercise_id = ?
+            ORDER BY tier ASC
+            """,
+            (exercise_id,),
+        )
+        return [row["tier"] for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def unlock_hint(exercise_id: str, tier: int, db_path: Path | None = None) -> dict[str, Any]:
+    """Record an unlocked hint tier for an exercise."""
+    init_db(db_path)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    conn = get_db(db_path)
+    hint_id = f"hint_{uuid.uuid4().hex[:10]}"
+
+    with conn:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO hint_history (id, exercise_id, tier, unlocked_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (hint_id, exercise_id, tier, now_iso),
+        )
+    conn.close()
+    return {
+        "exercise_id": exercise_id,
+        "tier": tier,
+        "unlocked_at": now_iso,
+    }
+
+
+def get_visualizer_progress(topic_id: str, db_path: Path | None = None) -> list[str]:
+    """Retrieve explored visualizer operations for a topic."""
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        cur = conn.execute(
+            "SELECT explored_operations_json FROM visualizer_progress WHERE topic_id = ?",
+            (topic_id,),
+        )
+        row = cur.fetchone()
+        if not row or not row["explored_operations_json"]:
+            return []
+        return json.loads(row["explored_operations_json"])
+    finally:
+        conn.close()
+
+
+def record_visualizer_operation(topic_id: str, operation_id: str, db_path: Path | None = None) -> list[str]:
+    """Add an operation to explored operations for a topic."""
+    init_db(db_path)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    conn = get_db(db_path)
+
+    with conn:
+        cur = conn.execute(
+            "SELECT explored_operations_json FROM visualizer_progress WHERE topic_id = ?",
+            (topic_id,),
+        )
+        row = cur.fetchone()
+        current_ops = set()
+        if row and row["explored_operations_json"]:
+            current_ops = set(json.loads(row["explored_operations_json"]))
+
+        current_ops.add(operation_id)
+        ops_list = sorted(list(current_ops))
+        ops_json = json.dumps(ops_list)
+
+        if row:
+            conn.execute(
+                "UPDATE visualizer_progress SET explored_operations_json = ?, last_visited_at = ? WHERE topic_id = ?",
+                (ops_json, now_iso, topic_id),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO visualizer_progress (topic_id, explored_operations_json, last_visited_at) VALUES (?, ?, ?)",
+                (topic_id, ops_json, now_iso),
+            )
+
+    conn.close()
+    return ops_list

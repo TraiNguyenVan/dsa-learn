@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import os
+import shutil
+import sys
 from pathlib import Path
+from typing import Any
 
 # Workspace root directory
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
@@ -38,6 +41,59 @@ DEFAULT_COMPILER_FLAGS = [
     "-Wextra",
     "-pedantic",
 ]
+DEBUG_COMPILER_FLAGS = [
+    "-std=c++20",
+    "-g",
+    "-O0",
+    "-Wall",
+    "-Wextra",
+]
+
+# Developer toolchain binaries & paths
+CLANGD_BIN = os.environ.get("CLANGD_BIN") or shutil.which("clangd")
+GDB_BIN = os.environ.get("GDB_BIN") or shutil.which("gdb")
+CODELLDB_BIN = os.environ.get("CODELLDB_BIN") or shutil.which("codelldb") or shutil.which("lldb-dap")
+
+if sys.platform == "win32":
+    DEFAULT_SHELL = os.environ.get("COMSPEC", "cmd.exe")
+else:
+    DEFAULT_SHELL = os.environ.get("SHELL") or shutil.which("bash") or shutil.which("sh") or "/bin/sh"
+
+
+def get_toolchain_status() -> dict[str, Any]:
+    """Inspect and report availability of host developer toolchains."""
+    compiler_bin = shutil.which(DEFAULT_COMPILER) or shutil.which("g++") or shutil.which("clang++")
+    debugger_flavor = "none"
+    debugger_bin = None
+
+    if GDB_BIN:
+        debugger_bin = GDB_BIN
+        debugger_flavor = "gdb-dap"
+    elif CODELLDB_BIN:
+        debugger_bin = CODELLDB_BIN
+        debugger_flavor = "codelldb"
+
+    return {
+        "compiler": {
+            "available": compiler_bin is not None,
+            "binary": compiler_bin or "",
+            "flavor": Path(compiler_bin).name if compiler_bin else "",
+        },
+        "language_server": {
+            "available": CLANGD_BIN is not None,
+            "binary": CLANGD_BIN or "",
+        },
+        "debugger": {
+            "available": debugger_bin is not None,
+            "binary": debugger_bin or "",
+            "flavor": debugger_flavor,
+        },
+        "shell": {
+            "available": True,
+            "path": DEFAULT_SHELL,
+            "platform": sys.platform,
+        },
+    }
 
 
 def ensure_directories() -> None:

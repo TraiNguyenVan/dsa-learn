@@ -1,0 +1,241 @@
+{
+  "patterns": [
+    {
+      "id": "two-pointers-opposite-ends",
+      "title": "Opposite-End Two Pointers",
+      "topic_ids": ["arrays-hashing", "two-pointers"],
+      "summary": "Converge left and right pointers towards the center to find pairs, partition elements, or reverse collections in linear time.",
+      "trigger_cues": [
+        "Array or string is sorted (or can be sorted in O(N log N))",
+        "Target is to find a pair or triplet summing to a value",
+        "Partitioning elements or checking palindromes in-place"
+      ],
+      "invariant_rules": [
+        "Pointers satisfy left < right at each step",
+        "All candidate solutions outside [left, right] have already been evaluated and eliminated",
+        "If current_sum < target, incrementing left strictly increases the sum (assuming sorted non-decreasing)"
+      ],
+      "code_template_cpp": "// C++20 Opposite-End Two Pointers Template\n#include <span>\n#include <optional>\n#include <utility>\n\nstd::optional<std::pair<int, int>> twoSumSorted(std::span<const int> nums, int target) {\n    if (nums.size() < 2) return std::nullopt;\n    int left = 0;\n    int right = static_cast<int>(nums.size()) - 1;\n\n    while (left < right) {\n        int current_sum = nums[left] + nums[right];\n        if (current_sum == target) {\n            return std::make_pair(left, right);\n        } else if (current_sum < target) {\n            ++left;\n        } else {\n            --right;\n        }\n    }\n    return std::nullopt;\n}",
+      "common_pitfalls": [
+        "Applying to an unsorted array without sorting first",
+        "Off-by-one index with right = size vs right = size - 1",
+        "Omitting pointer advance in branch causing an infinite loop"
+      ],
+      "related_exercise_ids": ["two-sum-ii", "3sum", "container-with-most-water", "valid-palindrome"]
+    },
+    {
+      "id": "sliding-window-variable",
+      "title": "Dynamic Sliding Window",
+      "topic_ids": ["sliding-window", "arrays-hashing"],
+      "summary": "Expand a contiguous window with a right pointer while contracting with a left pointer to satisfy a state invariant.",
+      "trigger_cues": [
+        "Subarray or substring contiguous range requirement",
+        "Longest/shortest range satisfying condition (e.g., at most K distinct elements)",
+        "Running sum or character frequency within a range"
+      ],
+      "invariant_rules": [
+        "Window [left, right] contains elements that maintain or approach the target constraint",
+        "Right pointer expands the candidate range by 1 on each outer loop",
+        "Left pointer contracts the window until the invariant is restored"
+      ],
+      "code_template_cpp": "// C++20 Dynamic Sliding Window Template\n#include <string_view>\n#include <unordered_map>\n#include <algorithm>\n\nint lengthOfLongestSubstringKDistinct(std::string_view s, int k) {\n    if (k <= 0 || s.empty()) return 0;\n    std::unordered_map<char, int> freq;\n    int max_len = 0;\n    int left = 0;\n\n    for (int right = 0; right < static_cast<int>(s.size()); ++right) {\n        freq[s[right]]++;\n        while (static_cast<int>(freq.size()) > k) {\n            char left_char = s[left++];\n            if (--freq[left_char] == 0) {\n                freq.erase(left_char);\n            }\n        }\n        max_len = std::max(max_len, right - left + 1);\n    }\n    return max_len;\n}",
+      "common_pitfalls": [
+        "Contracting window before evaluating or updating state counters",
+        "Re-scanning window from scratch rather than updating incremental frequency diffs",
+        "Failing to clean up map keys when frequency drops to 0"
+      ],
+      "related_exercise_ids": ["longest-substring-without-repeating-characters", "best-time-to-buy-and-sell-stock", "longest-repeating-character-replacement"]
+    },
+    {
+      "id": "fast-and-slow-pointers",
+      "title": "Fast & Slow Pointers (Floyd's Cycle Finding)",
+      "topic_ids": ["linked-lists"],
+      "summary": "Move two pointers at different speeds (1x and 2x) across a linked list or cyclical sequence to detect cycles or locate midpoints in O(1) space.",
+      "trigger_cues": [
+        "Detect if a linked list or sequence contains a cycle",
+        "Find the midpoint of a linked list in a single pass",
+        "Find the entry node of a circular loop"
+      ],
+      "invariant_rules": [
+        "In a cycle of length L, the relative distance between fast and slow decreases by 1 node per iteration",
+        "Slow and fast will meet in at most L iterations once slow enters the cycle",
+        "When slow and fast meet, resetting slow to head and moving both at 1x finds the cycle entrance"
+      ],
+      "code_template_cpp": "// C++20 Fast & Slow Pointers Template\nstruct ListNode {\n    int val;\n    ListNode* next;\n};\n\nbool hasCycle(ListNode* head) {\n    if (!head || !head->next) return false;\n    ListNode* slow = head;\n    ListNode* fast = head;\n\n    while (fast && fast->next) {\n        slow = slow->next;\n        fast = fast->next->next;\n        if (slow == fast) {\n            return true;\n        }\n    }\n    return false;\n}",
+      "common_pitfalls": [
+        "Null pointer dereference: forgetting to check both fast and fast->next before accessing fast->next->next",
+        "Misidentifying midpoint for even-length lists (depending on slow/fast initialization)",
+        "Overcomplicating with auxiliary hash sets when O(1) space is achievable"
+      ],
+      "related_exercise_ids": ["linked-list-cycle", "reorder-list"]
+    },
+    {
+      "id": "monotonic-stack",
+      "title": "Monotonic Stack",
+      "topic_ids": ["stack"],
+      "summary": "Maintain elements in a strictly increasing or decreasing order on a stack to resolve nearest greater/smaller element queries in linear time.",
+      "trigger_cues": [
+        "Find the next greater or smaller element for each index in an array",
+        "Find largest rectangle in histogram or trapping rain water bounds",
+        "Daily temperatures or span evaluations"
+      ],
+      "invariant_rules": [
+        "The stack always contains indices whose values satisfy the monotonic invariant (e.g. descending)",
+        "Incoming element pops all stack items that violate the invariant, resolving their queries",
+        "Each element is pushed once and popped at most once, giving amortized O(N) time"
+      ],
+      "code_template_cpp": "// C++20 Monotonic Decreasing Stack Template (Next Greater Element)\n#include <vector>\n#include <stack>\n\nstd::vector<int> nextGreaterElements(const std::vector<int>& nums) {\n    int n = nums.size();\n    std::vector<int> result(n, -1);\n    std::stack<int> st; // Stores indices\n\n    for (int i = 0; i < n; ++i) {\n        while (!st.empty() && nums[i] > nums[st.top()]) {\n            int prev_idx = st.top();\n            st.pop();\n            result[prev_idx] = nums[i];\n        }\n        st.push(i);\n    }\n    return result;\n}",
+      "common_pitfalls": [
+        "Storing values in the stack instead of indices when distances or indices are required",
+        "Using strict < versus <= leading to duplicate values improperly grouped",
+        "Assuming O(N^2) complexity because of nested while loop: each element enters and leaves once"
+      ],
+      "related_exercise_ids": ["daily-temperatures", "trapping-rain-water"]
+    },
+    {
+      "id": "backtracking-dfs",
+      "title": "State-Space Backtracking",
+      "topic_ids": ["trees"],
+      "summary": "Explore state candidates recursively and systematically undo state modifications (backtrack) upon encountering invalid states.",
+      "trigger_cues": [
+        "Generate all permutations, combinations, or partitions",
+        "Constrained search spaces (e.g. Sudoku, Word Search, N-Queens)",
+        "Find all valid decision paths through a graph or tree"
+      ],
+      "invariant_rules": [
+        "State before branching is identically restored after the recursive call returns",
+        "Base condition correctly records a completed leaf snapshot into results",
+        "Pruning condition terminates branches early if partial state cannot lead to valid solution"
+      ],
+      "code_template_cpp": "// C++20 Backtracking Template (Combinations)\n#include <vector>\n\nvoid backtrack(int start, int n, int k, std::vector<int>& current, std::vector<std::vector<int>>& result) {\n    if (static_cast<int>(current.size()) == k) {\n        result.push_back(current);\n        return;\n    }\n    for (int i = start; i <= n; ++i) {\n        current.push_back(i);        // Choose\n        backtrack(i + 1, n, k, current, result); // Explore\n        current.pop_back();          // Un-choose (Backtrack)\n    }\n}",
+      "common_pitfalls": [
+        "Forgetting to undo state modification (pop_back or reset flag), corrupting neighboring branches",
+        "Missing base return condition leading to recursion stack overflow",
+        "Failing to sort input array before handling duplicate candidates"
+      ],
+      "related_exercise_ids": ["two-sum", "3sum"]
+    }
+  ],
+  "decision_matrix": [
+    {
+      "id": "fast-lookup-by-key",
+      "scenario": "Frequent random access and key-based lookup",
+      "candidates": [
+        {
+          "structure_name": "Hash Table (std::unordered_map)",
+          "time_complexity": "O(1) average, O(N) worst",
+          "space_overhead": "High (buckets, hashes, and linked collision nodes)",
+          "best_when": "Unordered key lookup where average O(1) performance is required",
+          "avoid_when": "Sorted order iteration or strict worst-case latency bounds are mandatory",
+          "is_recommended": true
+        },
+        {
+          "structure_name": "Balanced Binary Search Tree (std::map)",
+          "time_complexity": "O(log N) strict",
+          "space_overhead": "Moderate (node pointers and balance metadata)",
+          "best_when": "Keys must stay ordered, or predecessor/successor range queries are needed",
+          "avoid_when": "Only raw equality lookups are needed and average O(1) is preferred",
+          "is_recommended": false
+        },
+        {
+          "structure_name": "Sorted Array with Binary Search",
+          "time_complexity": "O(log N) search, O(N) insert/delete",
+          "space_overhead": "Zero (contiguous elements in memory)",
+          "best_when": "Dataset is immutable or bulk-loaded once and queried heavily",
+          "avoid_when": "Frequent runtime insertions and deletions occur",
+          "is_recommended": false
+        }
+      ]
+    },
+    {
+      "id": "priority-and-extremum-access",
+      "scenario": "Continuous retrieval and streaming updates of minimum or maximum element",
+      "candidates": [
+        {
+          "structure_name": "Binary Heap (std::priority_queue)",
+          "time_complexity": "O(1) find extremum, O(log N) push/pop",
+          "space_overhead": "Zero (implemented over contiguous vector)",
+          "best_when": "Only need top priority element (min or max) without searching arbitrary keys",
+          "avoid_when": "Need to search, delete, or update arbitrary middle elements",
+          "is_recommended": true
+        },
+        {
+          "structure_name": "Balanced BST (std::set)",
+          "time_complexity": "O(log N) min/max, O(log N) push/pop",
+          "space_overhead": "Moderate (pointers per node)",
+          "best_when": "Need extremum access AND arbitrary deletions / range lookups simultaneously",
+          "avoid_when": "Only priority access is needed (unnecessary overhead)",
+          "is_recommended": false
+        },
+        {
+          "structure_name": "Unsorted Array",
+          "time_complexity": "O(1) append, O(N) find min/max",
+          "space_overhead": "Zero",
+          "best_when": "Extremum is queried extremely rarely compared to writes",
+          "avoid_when": "Streaming queries or frequent top-element consumption",
+          "is_recommended": false
+        }
+      ]
+    },
+    {
+      "id": "sequential-insertion-removal",
+      "scenario": "Frequent insertions and removals at the front or middle",
+      "candidates": [
+        {
+          "structure_name": "Singly / Doubly Linked List (std::list)",
+          "time_complexity": "O(1) insert/remove given node pointer, O(N) to seek by index",
+          "space_overhead": "High (1-2 pointers per node)",
+          "best_when": "LRU caches, constant-time splice and node relocation with existing iterators",
+          "avoid_when": "Need random access by index (O(N) traversal penalty)",
+          "is_recommended": true
+        },
+        {
+          "structure_name": "Double-Ended Queue (std::deque)",
+          "time_complexity": "O(1) push/pop at both front and back, O(1) indexed lookup",
+          "space_overhead": "Low (chunked memory pages)",
+          "best_when": "Sliding window buffers, job queues, double-ended queues",
+          "avoid_when": "Frequent insertions in the middle of the collection",
+          "is_recommended": true
+        },
+        {
+          "structure_name": "Dynamic Array (std::vector)",
+          "time_complexity": "O(N) insert/remove at front/middle, O(1) amortized append",
+          "space_overhead": "Minimal (contiguous memory block)",
+          "best_when": "Appends and random index access dominate over prepends",
+          "avoid_when": "Prepend or frequent middle deletions (requires shifting elements)",
+          "is_recommended": false
+        }
+      ]
+    },
+    {
+      "id": "ordered-range-queries",
+      "scenario": "Range queries [L, R], predecessor, successor, and sorted traversal",
+      "candidates": [
+        {
+          "structure_name": "Balanced BST (std::map / std::set / Red-Black Tree)",
+          "time_complexity": "O(log N + K) range scan, O(log N) insert/delete",
+          "space_overhead": "Moderate (pointers and color/height metadata)",
+          "best_when": "Dynamic dataset with real-time modifications requiring sorted bounds",
+          "avoid_when": "Data is completely static or known upfront",
+          "is_recommended": true
+        },
+        {
+          "structure_name": "Sorted Array with std::lower_bound",
+          "time_complexity": "O(log N + K) range scan, O(N) insert/delete",
+          "space_overhead": "Zero (contiguous)",
+          "best_when": "Static or read-only datasets with excellent CPU cache locality",
+          "avoid_when": "Dynamic insertions occur frequently",
+          "is_recommended": true
+        },
+        {
+          "structure_name": "Hash Table (std::unordered_map)",
+          "time_complexity": "O(N) full table scan for any range query",
+          "space_overhead": "High",
+          "best_when": "Never recommended for range queries",
+          "avoid_when": "Any range query or sorted iteration is required",
+          "is_recommended": false
+        }
+      ]
+    }
+  ]
+}

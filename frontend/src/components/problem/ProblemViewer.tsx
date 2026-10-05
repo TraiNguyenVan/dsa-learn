@@ -1,17 +1,70 @@
-import { useState } from 'react';
-import { Clock, Cpu, FileCode2, Copy, Check, ExternalLink } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Clock, Cpu, FileCode2, Copy, Check, ExternalLink, Lightbulb } from 'lucide-react';
+import { marked } from 'marked';
+import katex from 'katex';
+import DOMPurify from 'dompurify';
 import { ExerciseDetail } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { FoundationBadge } from './FoundationBadge';
+import { ProgressiveHintDrawer } from './ProgressiveHintDrawer';
 
 interface ProblemViewerProps {
   exercise: ExerciseDetail | null;
   loading: boolean;
 }
 
+function renderMarkdownWithMath(markdown: string): string {
+  if (!markdown) return '';
+
+  const mathTokens: Array<{ token: string; math: string; display: boolean }> = [];
+  let counter = 0;
+
+  // 1. Extract display math $$...$$
+  let processed = markdown.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
+    const token = `KATEXBLOCKTOKEN${counter++}X`;
+    mathTokens.push({ token, math: math.trim(), display: true });
+    return token;
+  });
+
+  // 2. Extract inline math $...$
+  processed = processed.replace(/(^|[^\\])\$([^\$\n]+?)\$/g, (_, prefix, math) => {
+    const token = `KATEXINLINETOKEN${counter++}X`;
+    mathTokens.push({ token, math: math.trim(), display: false });
+    return `${prefix}${token}`;
+  });
+
+  // 3. Parse markdown into HTML
+  let html = marked.parse(processed, { async: false, gfm: true, breaks: false }) as string;
+
+  // 4. Sanitize with DOMPurify
+  html = DOMPurify.sanitize(html);
+
+  // 5. Replace tokens with rendered KaTeX formulas
+  for (const { token, math, display } of mathTokens) {
+    try {
+      const rendered = katex.renderToString(math, {
+        displayMode: display,
+        throwOnError: false,
+      });
+      html = html.replaceAll(token, rendered);
+    } catch {
+      html = html.replaceAll(token, display ? `$$${math}$$` : `$${math}$`);
+    }
+  }
+
+  return html;
+}
+
 export function ProblemViewer({ exercise, loading }: ProblemViewerProps) {
   const [copied, setCopied] = useState(false);
+  const [hintsOpen, setHintsOpen] = useState(false);
+
+  const renderedContent = useMemo(() => {
+    if (!exercise?.problem_markdown) return '';
+    return renderMarkdownWithMath(exercise.problem_markdown);
+  }, [exercise?.problem_markdown]);
 
   if (loading) {
     return (
@@ -36,11 +89,12 @@ export function ProblemViewer({ exercise, loading }: ProblemViewerProps) {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden text-slate-200">
+    <div className="h-full flex flex-col overflow-hidden text-slate-200 relative">
       {/* Top Meta Bar */}
       <div className="px-5 py-3 border-b border-slate-800/80 bg-[#121A2B]/40 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
           <h1 className="text-base font-bold text-white font-mono">{exercise.title}</h1>
+          {exercise.is_foundation && <FoundationBadge size="md" />}
           <Badge
             variant={
               exercise.difficulty === 'Easy'
@@ -54,7 +108,7 @@ export function ProblemViewer({ exercise, loading }: ProblemViewerProps) {
           </Badge>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs font-mono text-slate-400">
+        <div className="flex items-center space-x-2.5 text-xs font-mono text-slate-400">
           <div className="flex items-center space-x-1 bg-slate-900/60 px-2 py-1 rounded border border-slate-800">
             <Clock className="w-3.5 h-3.5 text-emerald-400" />
             <span>Time: {exercise.time_complexity_target}</span>
@@ -63,6 +117,15 @@ export function ProblemViewer({ exercise, loading }: ProblemViewerProps) {
             <Cpu className="w-3.5 h-3.5 text-indigo-400" />
             <span>Space: {exercise.space_complexity_target}</span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setHintsOpen(true)}
+            className="h-6 px-2 text-xs border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 cursor-pointer"
+          >
+            <Lightbulb className="w-3.5 h-3.5 mr-1 text-amber-400" />
+            <span>Hints</span>
+          </Button>
           <a
             href={exercise.reference_url || "https://roadmap.sh/datastructures-and-algorithms"}
             target="_blank"
@@ -98,61 +161,21 @@ export function ProblemViewer({ exercise, loading }: ProblemViewerProps) {
 
       {/* Main Problem Markdown View */}
       <ScrollArea className="flex-1 p-6">
-        <div className="max-w-3xl space-y-6 text-sm leading-relaxed text-slate-300">
-          {/* Simple clean markdown render */}
-          <div className="prose prose-invert prose-emerald max-w-none">
-            {exercise.problem_markdown.split('\n\n').map((paragraph, idx) => {
-              if (paragraph.startsWith('# ')) {
-                return (
-                  <h1 key={idx} className="text-xl font-bold text-white mb-4">
-                    {paragraph.replace('# ', '')}
-                  </h1>
-                );
-              }
-              if (paragraph.startsWith('## ')) {
-                return (
-                  <h2 key={idx} className="text-sm font-semibold text-slate-200 mt-6 mb-2 uppercase tracking-wider font-mono border-b border-slate-800 pb-1">
-                    {paragraph.replace('## ', '')}
-                  </h2>
-                );
-              }
-              if (paragraph.startsWith('### ')) {
-                return (
-                  <h3 key={idx} className="text-xs font-semibold text-slate-300 mt-4 mb-2 font-mono">
-                    {paragraph.replace('### ', '')}
-                  </h3>
-                );
-              }
-              if (paragraph.startsWith('```')) {
-                const codeContent = paragraph.replace(/```[a-z]*\n?/g, '').trim();
-                return (
-                  <pre
-                    key={idx}
-                    className="p-3 bg-slate-950/80 rounded-md border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto my-3"
-                  >
-                    <code>{codeContent}</code>
-                  </pre>
-                );
-              }
-              if (paragraph.startsWith('- ')) {
-                const items = paragraph.split('\n').map((li) => li.replace(/^- /, ''));
-                return (
-                  <ul key={idx} className="list-disc list-inside space-y-1 my-2 text-slate-300">
-                    {items.map((it, i) => (
-                      <li key={i}>{it}</li>
-                    ))}
-                  </ul>
-                );
-              }
-              return (
-                <p key={idx} className="my-2">
-                  {paragraph}
-                </p>
-              );
-            })}
-          </div>
+        <div className="max-w-3xl">
+          <div
+            className="problem-markdown text-sm leading-relaxed text-slate-300"
+            dangerouslySetInnerHTML={{ __html: renderedContent }}
+          />
         </div>
       </ScrollArea>
+
+      {/* Progressive Hint Drawer */}
+      <ProgressiveHintDrawer
+        topicId={exercise.topic_id}
+        exerciseId={exercise.id}
+        isOpen={hintsOpen}
+        onClose={() => setHintsOpen(false)}
+      />
     </div>
   );
 }

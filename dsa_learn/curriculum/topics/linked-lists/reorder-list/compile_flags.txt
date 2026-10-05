@@ -1,0 +1,5 @@
+-std=c++20
+-Wall
+-Wextra
+-I.
+-I../../dsa_learn/runner/harness
