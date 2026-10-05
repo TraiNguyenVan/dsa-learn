@@ -60,9 +60,38 @@ For the comprehensive taxonomy, C++20 STL mapping matrix, and curriculum expansi
 
 ### Prerequisites
 
-- **C++ Compiler**: `g++` (>= 11 supporting C++20) or `clang++` (>= 14).
 - **Python**: Python 3.10+ (standard library only; no pip dependencies required).
+- **C++ Compiler**: `g++` (>= 11 supporting C++20). `clang++` (>= 14) is used automatically if `g++` is unavailable. Set `$CXX` to choose explicitly.
 - **Node.js** (Optional, only needed if modifying/building frontend source): Node 18+.
+
+Compiler install notes:
+
+| Platform | Command |
+| :--- | :--- |
+| Ubuntu/Debian | `sudo apt update && sudo apt install -y g++ build-essential` |
+| Fedora | `sudo dnf install -y gcc-c++` |
+| Alpine | `apk add g++` |
+| macOS | `xcode-select --install` (provides `clang++`; run this first or `python3` will be missing too) |
+| Windows | Install MinGW-w64, e.g. via [MSYS2](https://www.msys2.org/). MSVC's `cl.exe` is **not** supported — the build uses GCC/Clang flags such as `-std=c++20`. |
+
+### Supported Platforms
+
+Linux and Windows are actively tested. macOS works but is **documented, not verified** by CI — if something misbehaves there, please open an issue.
+
+### How to Invoke the CLI
+
+All commands below are shown in the POSIX form. Use the equivalent for your shell:
+
+| Platform | Shell | Command |
+| :--- | :--- | :--- |
+| Linux / macOS / WSL / Git Bash | `bash`, `zsh` | `./dsa-learn <command>` |
+| Windows | `cmd.exe` | `dsa-learn.cmd <command>` |
+| Windows | PowerShell | `.\dsa-learn.ps1 <command>` |
+| Any (most reliable) | any | `python3 run.py <command>` / `python run.py <command>` |
+
+If `./dsa-learn` reports `Permission denied`, the executable bit was lost (common when downloading a ZIP instead of cloning). Fix it with `chmod +x dsa-learn`.
+
+On Windows, if no interpreter is found, set `DSA_LEARN_PYTHON` to the full path of your `python.exe`. On POSIX, set `$PYTHON`.
 
 ### 1. Verify Environment
 
@@ -111,7 +140,10 @@ Open [http://localhost:8080](http://localhost:8080) to browse problems, track pr
 ## Project Structure
 
 ```text
-├── dsa-learn                          # CLI launcher script
+├── run.py                             # Platform-neutral CLI entry point (any shell/OS)
+├── dsa-learn                          # POSIX launcher (bash/zsh)
+├── dsa-learn.cmd                      # Windows launcher (cmd.exe)
+├── dsa-learn.ps1                      # Windows launcher (PowerShell)
 ├── dsa_learn/                         # Core Python platform engine
 │   ├── config.py                      # Path configuration & defaults
 │   ├── cli/                           # CLI command handlers (test, list, serve, reset)
@@ -130,8 +162,11 @@ Open [http://localhost:8080](http://localhost:8080) to browse problems, track pr
 
 ## Running Platform Tests
 
+Run from the repository root. Use `python3` on macOS and most Linux setups, `python` on Windows:
+
 ```bash
-python3 -m unittest discover tests
+python3 -m unittest discover tests   # Linux / macOS
+python -m unittest discover tests    # Windows
 ```
 
 ---

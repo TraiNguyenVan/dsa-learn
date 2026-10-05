@@ -34,6 +34,10 @@ FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 DEFAULT_TIMEOUT_MS = 2000
 DEFAULT_PORT = 8080
 DEFAULT_COMPILER = os.environ.get("CXX", "g++")
+
+# Ordered preference used when DEFAULT_COMPILER is unavailable on PATH.
+COMPILER_FALLBACKS = ("g++", "clang++")
+
 DEFAULT_COMPILER_FLAGS = [
     "-std=c++20",
     "-O2",
@@ -48,6 +52,33 @@ DEBUG_COMPILER_FLAGS = [
     "-Wall",
     "-Wextra",
 ]
+
+
+def resolve_compiler(preferred: str | None = None) -> str | None:
+    """Return the first available C++ compiler binary, or None if none is installed.
+
+    Preference order is the caller-supplied binary (or ``$CXX`` / ``DEFAULT_COMPILER``),
+    then ``g++``, then ``clang++``. No platform parameter is needed because
+    ``shutil.which`` already resolves ``.exe`` suffixes via ``PATHEXT`` on Windows.
+    """
+    for candidate in (preferred or DEFAULT_COMPILER, *COMPILER_FALLBACKS):
+        if candidate and shutil.which(candidate):
+            return candidate
+    return None
+
+
+def binary_candidates(stem: str, platform: str | None = None) -> list[str]:
+    """Return the plausible output filenames for a compiled binary, in probe order.
+
+    GCC and Clang append ``.exe`` on Windows, but the exact behaviour varies by
+    toolchain, so both spellings are probed and the caller uses whichever file the
+    compiler actually produced. ``platform`` is injectable so the Windows ordering
+    can be asserted from any host.
+    """
+    plat = platform or sys.platform
+    if plat == "win32":
+        return [f"{stem}.exe", stem]
+    return [stem, f"{stem}.exe"]
 
 # Developer toolchain binaries & paths
 CLANGD_BIN = os.environ.get("CLANGD_BIN") or shutil.which("clangd")

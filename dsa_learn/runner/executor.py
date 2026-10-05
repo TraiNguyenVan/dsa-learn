@@ -152,14 +152,17 @@ def run_verification(
             )
         return result
 
-    # Step 2: Execute compiled binary with timeout
+    # Step 2: Execute compiled binary with timeout.
+    # Use the path the compiler actually wrote (.exe suffix on Windows), not the
+    # extensionless name we passed to -o.
+    run_binary = compile_res.binary_path or binary_path
     timeout_ms = exercise.get("timeout_ms", DEFAULT_TIMEOUT_MS)
     timeout_sec = max(0.5, timeout_ms / 1000.0)
 
     start_exec = time.perf_counter()
     try:
         proc = subprocess.run(
-            [str(binary_path), "--json"],
+            [str(run_binary), "--json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,

@@ -16,10 +16,14 @@ from dsa_learn.config import (
     DEFAULT_COMPILER_FLAGS,
     DSA_TEST_HPP,
     HARNESS_DIR,
+    binary_candidates,
+    resolve_compiler,
 )
 
+# The file group is non-greedy up to the FIRST ":<digits>:<digits>:" triplet so that a
+# Windows drive letter ("C:\...\solution.cpp:14:5: error:") does not terminate the match.
 DIAGNOSTIC_REGEX = re.compile(
-    r"^(?P<file>[^:\n]+):(?P<line>\d+):(?P<column>\d+):\s+(?P<severity>error|warning|note):\s+(?P<message>.+)$"
+    r"^(?P<file>.+?):(?P<line>\d+):(?P<column>\d+):\s+(?P<severity>error|warning|note):\s+(?P<message>.+)$"
 )
 
 # Common C++ educational diagnostic explanations
@@ -119,6 +123,20 @@ class CompilerResult:
         }
 
 
+def resolve_output_binary(output_binary: Path, platform: str | None = None) -> Path | None:
+    """Return the compiled binary actually written to disk, tolerating a platform suffix.
+
+    ``g++ -o build/run_x`` writes ``build/run_x`` on POSIX but ``build/run_x.exe`` on
+    Windows. Probing every candidate keeps callers correct on both without hardcoding
+    an assumption about which toolchain appends the suffix.
+    """
+    for name in binary_candidates(output_binary.stem, platform):
+        candidate = output_binary.with_name(name)
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def parse_diagnostics(compiler_output: str, solution_file: Path | None = None) -> list[CompilerDiagnostic]:
     """Parse raw GCC diagnostics output into structured, actionable items."""
     diagnostics: list[CompilerDiagnostic] = []
@@ -164,7 +182,7 @@ def compile_exercise(
     extra_flags: list[str] | None = None,
 ) -> CompilerResult:
     """Compile learner solution and test suite together into an executable."""
-    compiler_bin = compiler or DEFAULT_COMPILER
+    compiler_bin = compiler or resolve_compiler() or DEFAULT_COMPILER
     output_binary.parent.mkdir(parents=True, exist_ok=True)
 
     # Check if compiler exists
@@ -176,7 +194,8 @@ def compile_exercise(
             "  - Fedora: sudo dnf install -y gcc-c++\n"
             "  - Alpine: apk add g++\n"
             "  - macOS: xcode-select --install\n"
-            "  - Windows: Install MinGW-w64 or Visual Studio C++ build tools."
+            "  - Windows: Install MinGW-w64 (e.g. via MSYS2). MSVC's cl.exe is not\n"
+            "    supported: the build uses GCC/Clang flags such as -std=c++20."
         )
         return CompilerResult(
             success=False,
@@ -230,11 +249,15 @@ def compile_exercise(
         raw_output = (proc.stdout + "\n" + proc.stderr).strip()
 
         diagnostics = parse_diagnostics(raw_output, solution_file)
-        success = proc.returncode == 0 and output_binary.exists()
+
+        # GCC/Clang may append a platform suffix (.exe on Windows) to -o. Probe for
+        # whichever spelling was actually produced rather than assuming one.
+        resolved_binary = resolve_output_binary(output_binary)
+        success = proc.returncode == 0 and resolved_binary is not None
 
         return CompilerResult(
             success=success,
-            binary_path=output_binary if success else None,
+            binary_path=resolved_binary,
             diagnostics=diagnostics,
             raw_output=raw_output,
             duration_ms=duration_ms,

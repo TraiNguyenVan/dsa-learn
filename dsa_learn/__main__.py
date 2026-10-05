@@ -9,7 +9,7 @@ import sys
 from dsa_learn import __version__
 from dsa_learn.cli.catalog_cmd import handle_list_cmd, handle_reset_cmd, handle_solution_cmd
 from dsa_learn.cli.test_cmd import handle_test_cmd
-from dsa_learn.config import DEFAULT_COMPILER, ensure_directories
+from dsa_learn.config import DEFAULT_COMPILER, ensure_directories, resolve_compiler
 from dsa_learn.storage import db
 
 
@@ -18,17 +18,21 @@ def handle_version_cmd() -> int:
     print(f"DSA Learn Platform v{__version__}")
     print(f"Python Runtime:    {sys.version.split()[0]}")
 
-    compiler_path = shutil.which(DEFAULT_COMPILER)
-    if compiler_path:
+    # Resolve the same way the compiler wrapper does, so this never contradicts
+    # /api/tools or a clang-only host.
+    compiler_bin = resolve_compiler()
+    compiler_path = shutil.which(compiler_bin) if compiler_bin else None
+    if compiler_bin and compiler_path:
         try:
-            res = subprocess.run([DEFAULT_COMPILER, "--version"], capture_output=True, text=True)
+            res = subprocess.run([compiler_bin, "--version"], capture_output=True, text=True)
             first_line = res.stdout.splitlines()[0] if res.stdout else "unknown"
             print(f"C++ Compiler:      {first_line} ({compiler_path})")
             print(f"C++ Standard:      C++20 (-std=c++20)")
         except Exception:
-            print(f"C++ Compiler:      {DEFAULT_COMPILER} (detected)")
+            print(f"C++ Compiler:      {compiler_bin} (detected)")
     else:
-        print(f"C++ Compiler:      ⚠️ NOT FOUND ({DEFAULT_COMPILER})")
+        tried = DEFAULT_COMPILER
+        print(f"C++ Compiler:      ⚠️ NOT FOUND (tried: {tried}, g++, clang++)")
 
     # DB readiness
     ensure_directories()

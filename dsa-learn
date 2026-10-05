@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
-# DSA Learn CLI Launcher
+# DSA Learn CLI Launcher (POSIX: Linux, macOS, WSL, Git Bash)
+# Delegates to run.py so sys.path setup happens in Python, not via a
+# platform-specific PYTHONPATH separator.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export PYTHONPATH="${SCRIPT_DIR}:${PYTHONPATH}"
 
-exec python3 -m dsa_learn "$@"
+# Honour $PYTHON when set, otherwise prefer python3 and fall back to python
+# (some Windows and macOS setups expose only one of the two names).
+if [ -n "${PYTHON:-}" ]; then
+    PY="$PYTHON"
+elif command -v python3 >/dev/null 2>&1; then
+    PY="python3"
+else
+    PY="python"
+fi
+
+exec "$PY" "$SCRIPT_DIR/run.py" "$@"

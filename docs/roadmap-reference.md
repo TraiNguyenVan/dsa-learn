@@ -15,7 +15,7 @@ This reference document establishes the architectural and pedagogical alignment 
 1. **Learn the Theory**: Study core concepts, complexities, and visual diagrams on [roadmap.sh/datastructures-and-algorithms](https://roadmap.sh/datastructures-and-algorithms).
 2. **Consult Modern C++ Idioms**: Reference language guidelines and standard library conventions on [roadmap.sh/cpp](https://roadmap.sh/cpp).
 3. **Practice Locally**: Edit idiomatic C++20 templates in your own editor (VS Code, Neovim, CLion) inside the `exercises/` workspace.
-4. **Instant Multi-Tier Verification**: Run `./dsa-learn test <id>` or watch live results in the React web dashboard (`./dsa-learn serve`) with sub-3s native `g++` compilation, deterministic timeouts, and educational diagnostic hints.
+4. **Instant Multi-Tier Verification**: Run `./dsa-learn test <id>` (Windows: `dsa-learn.cmd test <id>`, or `python run.py test <id>` on any platform) or watch live results in the React web dashboard (`./dsa-learn serve`) with sub-3s native `g++` compilation, deterministic timeouts, and educational diagnostic hints.
 
 ---
 
