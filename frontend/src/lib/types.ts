@@ -223,14 +223,6 @@ export interface DebugBuildResult {
   duration_ms: number;
 }
 
-export interface DebugBuildResult {
-  status: 'SUCCESS' | 'COMPILATION_ERROR';
-  compiler_output: string;
-  program_path: string | null;
-  source_path: string | null;
-  duration_ms: number;
-}
-
 export interface ToolsStatus {
   compiler: {
     available: boolean;
