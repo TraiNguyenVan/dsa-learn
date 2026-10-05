@@ -1,6 +1,7 @@
 import {
   CompileRunResult,
   ConceptLesson,
+  DebugBuildResult,
   DecisionMatrixEntry,
   ExerciseDetail,
   ExerciseHintsResponse,
@@ -69,6 +70,19 @@ export async function compileAndRunExercise(
     body: JSON.stringify({ stdin, timeout_ms: timeoutMs }),
   });
   if (!res.ok) throw new Error('Failed to run code');
+  return res.json();
+}
+
+export async function buildDebugBinary(exerciseId: string): Promise<DebugBuildResult> {
+  const res = await fetch(`${API_BASE}/exercises/${exerciseId}/debug-build`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (res.status === 422) {
+    // Compilation failure: hand the diagnostics back so the caller can report them.
+    return res.json();
+  }
+  if (!res.ok) throw new Error(`Failed to build debug binary for ${exerciseId}`);
   return res.json();
 }
 
