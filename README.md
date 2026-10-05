@@ -24,24 +24,30 @@ Learners write and edit standard C++ source files in their own local editor (VS 
 
 ---
 
-## Starter Curriculum
+## Curriculum Overview (50 Problems Across 12 Roadmap.sh Topics)
 
-The platform ships with 6 curated foundational exercises:
+The platform includes **50 foundational and advanced exercises** covering all core topics from the official [roadmap.sh Data Structures & Algorithms](https://roadmap.sh/datastructures-and-algorithms) roadmap:
 
-| Topic | Exercise | Difficulty | Target Time | Target Space |
-| :--- | :--- | :--- | :--- | :--- |
-| **Arrays & Hashing** | `two-sum` | Easy | $O(N)$ | $O(N)$ |
-| **Arrays & Hashing** | `max-subarray` | Medium | $O(N)$ | $O(1)$ |
-| **Two Pointers** | `valid-palindrome` | Easy | $O(N)$ | $O(1)$ |
-| **Linked Lists** | `reverse-linked-list` | Easy | $O(N)$ | $O(1)$ |
-| **Trees** | `invert-binary-tree` | Easy | $O(N)$ | $O(H)$ |
-| **Dynamic Programming** | `climbing-stairs` | Easy | $O(N)$ | $O(1)$ |
+| # | Topic | Problems Count | Key Problems Included |
+| :-: | :--- | :-: | :--- |
+| 1 | **Arrays & Hashing** | 6 | `two-sum`, `max-subarray`, `contains-duplicate`, `valid-anagram`, `group-anagrams`, `product-of-array-except-self` |
+| 2 | **Two Pointers** | 5 | `valid-palindrome`, `two-sum-ii`, `3sum`, `container-with-most-water`, `trapping-rain-water` |
+| 3 | **Sliding Window** | 4 | `best-time-to-buy-and-sell-stock`, `longest-substring-without-repeating`, `character-replacement`, `permutation-in-string` |
+| 4 | **Stack** | 4 | `valid-parentheses`, `min-stack`, `evaluate-reverse-polish-notation`, `daily-temperatures` |
+| 5 | **Binary Search** | 4 | `binary-search`, `search-a-2d-matrix`, `koko-eating-bananas`, `find-minimum-in-rotated-sorted-array` |
+| 6 | **Linked Lists** | 5 | `reverse-linked-list`, `merge-two-sorted-lists`, `reorder-list`, `remove-nth-node-from-end`, `linked-list-cycle` |
+| 7 | **Trees & BSTs** | 6 | `invert-binary-tree`, `maximum-depth`, `same-tree`, `subtree-of-another-tree`, `lowest-common-ancestor-bst`, `level-order-traversal` |
+| 8 | **Tries (Prefix Trees)** | 2 | `implement-trie`, `design-add-and-search-words` |
+| 9 | **Heap / Priority Queue** | 3 | `kth-largest-in-stream`, `last-stone-weight`, `kth-largest-element-in-array` |
+| 10 | **Backtracking** | 3 | `subsets`, `combination-sum`, `permutations` |
+| 11 | **Graphs** | 4 | `number-of-islands`, `max-area-of-island`, `clone-graph`, `pacific-atlantic-water-flow` |
+| 12 | **Dynamic Programming** | 4 | `climbing-stairs`, `house-robber`, `house-robber-ii`, `coin-change` |
 
 ### Pedagogical Reference & Roadmap.sh Alignment
 
 `dsa-learn` serves as the hands-on local C++ execution companion to the official **[roadmap.sh Data Structures & Algorithms](https://roadmap.sh/datastructures-and-algorithms)** and **[roadmap.sh C++ Developer Roadmap](https://roadmap.sh/cpp)**. While roadmap.sh provides theoretical explanations, visualizations, and knowledge trees, `dsa-learn` provides the local sandbox, C++20 standard library patterns, and automated multi-tier verification.
 
-For the comprehensive 11-module taxonomy, C++20 STL mapping matrix, and curriculum expansion roadmap, see **[`docs/roadmap-reference.md`](docs/roadmap-reference.md)**.
+For the comprehensive taxonomy, C++20 STL mapping matrix, and curriculum expansion roadmap, see **[`docs/roadmap-reference.md`](docs/roadmap-reference.md)**.
 
 ---
 
