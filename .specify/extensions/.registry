@@ -8,7 +8,7 @@
       "enabled": true,
       "priority": 10,
       "registered_commands": {
-        "agy": [
+        "opencode": [
           "speckit.bug.assess",
           "speckit.bug.fix",
           "speckit.bug.test"
@@ -24,7 +24,7 @@
       "enabled": true,
       "priority": 10,
       "registered_commands": {
-        "agy": [
+        "opencode": [
           "speckit.assess.intake",
           "speckit.assess.research",
           "speckit.assess.define",
@@ -42,7 +42,7 @@
       "enabled": true,
       "priority": 10,
       "registered_commands": {
-        "agy": [
+        "opencode": [
           "speckit.git.feature",
           "speckit.git.validate",
           "speckit.git.remote",
