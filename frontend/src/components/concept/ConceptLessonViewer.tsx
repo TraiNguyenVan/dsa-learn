@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   BookOpen,
   CheckCircle2,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { ConceptLesson } from '@/lib/types';
 import { fetchTopicLesson, updateLessonProgress } from '@/lib/api';
+import { renderMarkdownWithMath } from '@/lib/markdown';
 import { ComplexityMatrixTable } from './ComplexityMatrixTable';
 import { MemoryDiagram } from './MemoryDiagram';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,16 @@ export const ConceptLessonViewer: React.FC<ConceptLessonViewerProps> = ({
   useEffect(() => {
     loadLesson();
   }, [loadLesson]);
+
+  // Lesson markdown is authored with LaTeX math and markdown lists; render it once
+  // per lesson load instead of emitting the raw source as a text node.
+  const renderedSectionBodies = useMemo(() => {
+    const bodies = new Map<string, string>();
+    lesson?.sections.forEach((section) => {
+      bodies.set(section.id, renderMarkdownWithMath(section.content_markdown, { breaks: true }));
+    });
+    return bodies;
+  }, [lesson]);
 
   const handleToggleSection = async (sectionId: string, currentCompleted: boolean) => {
     try {
@@ -194,9 +205,12 @@ export const ConceptLessonViewer: React.FC<ConceptLessonViewerProps> = ({
                   </button>
                 </div>
 
-                <div className="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed font-sans whitespace-pre-line">
-                  {section.content_markdown}
-                </div>
+                <div
+                  className="markdown-body text-sm leading-relaxed text-slate-300"
+                  dangerouslySetInnerHTML={{
+                    __html: renderedSectionBodies.get(section.id) ?? '',
+                  }}
+                />
               </div>
             );
           })}

@@ -48,7 +48,7 @@ export const MemoryDiagram: React.FC<MemoryDiagramProps> = ({ topicId = 'arrays-
         {activeTab === 'contiguous' ? (
           <div>
             <div className="mb-2 text-xs text-slate-400">
-              Contiguous memory allocation provides constant-time $O(1)$ random offset access and high L1/L2 cache-line spatial locality.
+              Contiguous memory allocation provides constant-time O(1) random offset access and high L1/L2 cache-line spatial locality.
             </div>
             {/* SVG Visual of Contiguous Array Buffer */}
             <div className="flex items-center justify-center py-4 overflow-x-auto">

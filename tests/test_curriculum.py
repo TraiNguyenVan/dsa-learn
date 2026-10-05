@@ -1,9 +1,10 @@
 """Integrity tests for curriculum metadata and problem markdown files."""
 
 import json
+import re
 import unittest
 from pathlib import Path
-from dsa_learn.config import CATALOG_PATH, WORKSPACE_ROOT
+from dsa_learn.config import CATALOG_PATH, TOPICS_DIR, WORKSPACE_ROOT
 from dsa_learn.runner.executor import load_catalog
 
 
@@ -58,6 +59,27 @@ class TestCurriculum(unittest.TestCase):
                 # Verify target complexity section contains Time and Space complexity bullets
                 self.assertIn("- **Time Complexity**:", content, f"'{ex_id}' missing Time Complexity line")
                 self.assertIn("- **Space Complexity**:", content, f"'{ex_id}' missing Space Complexity line")
+
+
+class TestLessonMarkdown(unittest.TestCase):
+    """Concept lessons are rendered as markdown + KaTeX, so their math delimiters
+    must be balanced or the renderer shows raw source to the learner."""
+
+    def test_lesson_math_delimiters_are_balanced(self):
+        lesson_files = sorted(TOPICS_DIR.glob("*/lesson.md"))
+        self.assertGreater(len(lesson_files), 0, "Expected at least one lesson.md")
+
+        for lesson_file in lesson_files:
+            for lineno, line in enumerate(lesson_file.read_text(encoding="utf-8").splitlines(), 1):
+                # Drop display math blocks ($$...$$) first, then count the
+                # remaining single dollar signs that are not escaped.
+                without_display = re.sub(r"\$\$.*?\$\$", "", line)
+                delimiters = re.findall(r"(?<!\\)\$", without_display)
+                self.assertEqual(
+                    len(delimiters) % 2,
+                    0,
+                    f"{lesson_file}:{lineno} has an unbalanced '$' delimiter: {line.strip()!r}",
+                )
 
 
 if __name__ == "__main__":

@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Clock, Cpu, FileCode2, Copy, Check, ExternalLink, Lightbulb } from 'lucide-react';
-import { marked } from 'marked';
-import katex from 'katex';
-import DOMPurify from 'dompurify';
+import { renderMarkdownWithMath } from '@/lib/markdown';
 import { ExerciseDetail } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,48 +11,6 @@ import { ProgressiveHintDrawer } from './ProgressiveHintDrawer';
 interface ProblemViewerProps {
   exercise: ExerciseDetail | null;
   loading: boolean;
-}
-
-function renderMarkdownWithMath(markdown: string): string {
-  if (!markdown) return '';
-
-  const mathTokens: Array<{ token: string; math: string; display: boolean }> = [];
-  let counter = 0;
-
-  // 1. Extract display math $$...$$
-  let processed = markdown.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
-    const token = `KATEXBLOCKTOKEN${counter++}X`;
-    mathTokens.push({ token, math: math.trim(), display: true });
-    return token;
-  });
-
-  // 2. Extract inline math $...$
-  processed = processed.replace(/(^|[^\\])\$([^\$\n]+?)\$/g, (_, prefix, math) => {
-    const token = `KATEXINLINETOKEN${counter++}X`;
-    mathTokens.push({ token, math: math.trim(), display: false });
-    return `${prefix}${token}`;
-  });
-
-  // 3. Parse markdown into HTML
-  let html = marked.parse(processed, { async: false, gfm: true, breaks: false }) as string;
-
-  // 4. Sanitize with DOMPurify
-  html = DOMPurify.sanitize(html);
-
-  // 5. Replace tokens with rendered KaTeX formulas
-  for (const { token, math, display } of mathTokens) {
-    try {
-      const rendered = katex.renderToString(math, {
-        displayMode: display,
-        throwOnError: false,
-      });
-      html = html.replaceAll(token, rendered);
-    } catch {
-      html = html.replaceAll(token, display ? `$$${math}$$` : `$${math}$`);
-    }
-  }
-
-  return html;
 }
 
 export function ProblemViewer({ exercise, loading }: ProblemViewerProps) {

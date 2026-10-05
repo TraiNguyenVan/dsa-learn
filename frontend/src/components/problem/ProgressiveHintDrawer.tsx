@@ -10,10 +10,9 @@ import {
   Loader2,
   CheckCircle2,
 } from 'lucide-react';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
 import { ProgressiveHint } from '@/lib/types';
 import { fetchExerciseHints, unlockNextHint } from '@/lib/api';
+import { renderMarkdownWithMath } from '@/lib/markdown';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -77,7 +76,7 @@ export const ProgressiveHintDrawer: React.FC<ProgressiveHintDrawerProps> = ({
 
   const renderContent = (markdown?: string | null) => {
     if (!markdown) return null;
-    const html = DOMPurify.sanitize(marked.parse(markdown, { gfm: true, breaks: true }) as string);
+    const html = renderMarkdownWithMath(markdown, { breaks: true });
     return (
       <div
         className="prose prose-invert prose-xs max-w-none text-slate-300 [&>p]:leading-relaxed [&>pre]:bg-slate-950/80 [&>pre]:p-2.5 [&>pre]:rounded-md [&>pre]:border [&>pre]:border-slate-800 [&>pre]:font-mono [&>code]:text-emerald-400 [&>code]:bg-slate-800/60 [&>code]:px-1 [&>code]:rounded"
