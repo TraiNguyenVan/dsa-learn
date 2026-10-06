@@ -123,5 +123,10 @@
       "section_ref": "limits",
       "claim": "No comparison sort can beat Omega(n log n) because the bound is a property of the problem class, not of an algorithm. Beating it requires leaving the comparison model entirely, as counting and radix sorts do, and paying for the key range in both time and space. Heapsort attains the optimal worst case with the worst memory access pattern of any comparison sort, which is why introsort runs quicksort and falls back to heapsort only at a depth limit."
     }
+  },
+  "supporting_structure": {
+    "name": "Merge Run",
+    "native_to_technique": true,
+    "rationale": "Merge sort never compares elements pairwise against the whole input; it compares the leading elements of two sorted *runs* and copies the smaller one forward. The run is therefore the unit the algorithm manipulates, the state the cost argument counts in, and the only structure a merge needs beyond the array itself. Exposing the run -- how many exist, how wide each is, which two to merge next -- makes ceil(log2 R) passes and the O(N)-per-pass cost visible rather than asserted."
   }
 }

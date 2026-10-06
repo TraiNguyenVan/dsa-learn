@@ -132,5 +132,10 @@
       "section_ref": "limits",
       "claim": "Conditionally on the negative-weight triangle hypothesis, no combinatorial algorithm improves O(VE) negative-weight shortest path below O(E^(3-epsilon)), and Floyd-Warshall's O(V^3) is the best known unconditional all-pairs bound. Negative cycles make the problem undefined rather than merely hard. Directed reachability has no O(V+E) sequential algorithm, so a symmetric algorithm for the directed case is a real limitation rather than a shortcut."
     }
+  },
+  "supporting_structure": {
+    "name": "BFS Frontier",
+    "native_to_technique": true,
+    "rationale": "Breadth-first search carries no other state than the queue of discovered-but-not-yet-expanded vertices, and the FIFO order of that queue is precisely what produces the level structure and therefore the shortest-path guarantee. The frontier is not a container bolted onto the topic -- it is the algorithm. Making the discovery rule (mark on enqueue, not on dequeue) explicit in the structure is what keeps a traversal O(V + E) instead of O(E) expansions."
   }
 }

@@ -180,8 +180,15 @@ def compile_exercise(
     output_binary: Path,
     compiler: str | None = None,
     extra_flags: list[str] | None = None,
+    build_timeout: int | None = None,
 ) -> CompilerResult:
-    """Compile learner solution and test suite together into an executable."""
+    """Compile learner solution and test suite together into an executable.
+
+    ``build_timeout`` defaults to the learner-facing 15s budget. Sanitised
+    verification builds (``-fsanitize=address,undefined``) compile several times
+    slower and legitimately need longer, so they raise it rather than being
+    reported as a mysterious "Compilation timed out".
+    """
     compiler_bin = compiler or resolve_compiler() or DEFAULT_COMPILER
     output_binary.parent.mkdir(parents=True, exist_ok=True)
 
@@ -243,7 +250,7 @@ def compile_exercise(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=15,  # 15s build timeout limit
+            timeout=build_timeout or 15,  # 15s build timeout limit
         )
         duration_ms = int((time.perf_counter() - start_time) * 1000)
         raw_output = (proc.stdout + "\n" + proc.stderr).strip()

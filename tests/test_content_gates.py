@@ -767,5 +767,273 @@ class TestLessonEndpointShape(unittest.TestCase):
             self.assertEqual(by_id[tid], get_topic_lesson(tid)["prerequisites"], tid)
 
 
+# ---------------------------------------------------------------------------
+# US4 / G-09 and G-10: implementation exercises
+# ---------------------------------------------------------------------------
+
+# Topics whose subject is a *technique* rather than a data structure. For these, the
+# implementation exercise builds the structure the technique genuinely operates on --
+# the window state, the search structure, the recursion memo -- so that requirement
+# is meaningful. Structure topics (stack, heap, tries, ...) build the structure that
+# IS the topic, and `supporting_structure` does not apply to them.
+#
+# This split is declared here rather than inferred, so it is auditable and cannot
+# drift: a topic cannot quietly become "technique-based" by adding the field.
+TECHNIQUE_TOPICS: set[str] = {
+    "backtracking",
+    "binary-search",
+    "dynamic-programming",
+    "graph-algorithms",
+    "math-bitwise",
+    "sliding-window",
+    "sorting",
+    "two-pointers",
+}
+
+# E-04: the operation categories every container-shaped exercise must cover. Checked
+# as substrings so `pop_back`, `push_front`, `find_min`, `insert_after`, `lower_bound`
+# and friends all satisfy their category without an exact-name registry to maintain.
+REQUIRED_COMPONENT_CATEGORIES: dict[str, tuple[str, ...]] = {
+    "construction": ("construct", "create", "default", "reset", "set_values", "resize"),
+    "insertion": ("push", "insert", "add", "set", "enqueue", "unite", "mark_tried",
+                  "resize", "set_all", "load"),
+    "deletion": ("pop", "remove", "clear", "erase", "delete", "dequeue", "reset",
+                 "resize", "set_values"),
+    "lookup": ("contains", "find", "search", "peek", "starts_with", "has_edge", "connected",
+               "get", "at", "is_", "count", "tried", "degree", "key_of", "subscript"),
+    "traversal": ("neighbours", "inorder", "drain", "pending", "keys", "to_string",
+                  "to_mask", "traverse", "walk", "export", "snapshot", "max", "tried",
+                  "height", "node", "is_sorted", "get", "at", "subscript"),
+    "cleanup": ("destroy", "clear", "reset", "collapse", "remove", "erase", "split"),
+}
+
+# E-04 allows the "topic-appropriate analogue" where a category has no primitive at
+# all. Declared here rather than hidden in the pattern list so the exception is
+# visible in review instead of being indistinguishable from a satisfied check.
+CATEGORY_ANALOGUES: dict[str, dict[str, str]] = {
+    # A LIFO stack exposes exactly one element; there is no cursor to walk and no
+    # "give me all of them" operation, because iterating it would not be a stack.
+    "stack": {"traversal": "LIFO: only the top element is addressable, so no traversal exists"},
+}
+
+# A hint tier must not hand over an implementation. These are the shapes that do.
+_HINT_CODE_FENCE = re.compile(r"```")
+_HINT_BARE_BODY = re.compile(
+    r"^\s*(?:"
+    r"\bfor\s*\(|\bwhile\s*\(|\bif\s*\(|\belse\b|\breturn\b[^;]*;|"
+    r"\bnew\s+\w|\bdelete\b|\b\w+\s*=\s*\w+\s*\([^)]*\)\s*;"
+    r")",
+    re.M,
+)
+
+
+def _implementation_exercises(catalog: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
+    """topic_id -> the single implementation exercise for that topic."""
+    catalog = catalog or load_catalog()
+    found: dict[str, dict[str, Any]] = {}
+    for topic in catalog.get("topics", []):
+        impls = [e for e in topic.get("exercises", []) if e.get("kind") == "implementation"]
+        if len(impls) == 1:
+            found[topic["id"]] = impls[0]
+    return found
+
+
+class TestGateG09ImplementationExercises(unittest.TestCase):
+    """G-09 (E-02..E-04, M-07, SC-015, SC-016).
+
+    Every topic must have exactly one implementation exercise; every declared
+    component must be exercised by a foundation-tier test; the declared components
+    must cover the required operation categories; and technique topics must declare a
+    supporting structure native to their technique.
+    """
+
+    def test_every_topic_has_exactly_one_implementation_exercise(self):
+        catalog = load_catalog()
+        problems: list[str] = []
+        for topic in catalog.get("topics", []):
+            impls = [e["id"] for e in topic.get("exercises", []) if e.get("kind") == "implementation"]
+            if len(impls) != 1:
+                problems.append(f"{topic['id']}: {len(impls)} implementation exercises {impls}")
+        self.assertEqual([], problems, "\n".join(problems))
+        # Guard against a gate that passes because it found nothing to check.
+        self.assertEqual(len(topic_ids(catalog)), len(TECHNIQUE_TOPICS) + 8)
+
+    def test_every_declared_component_has_a_foundation_test(self):
+        # E-03: `components` is a claim about per-operation evaluation. It is only
+        # true if the test file actually registers a foundation test per component.
+        missing: list[str] = []
+        for topic_id, exercise in _implementation_exercises().items():
+            test_path = REPO_ROOT / exercise["test_relpath"]
+            self.assertTrue(test_path.exists(), f"{topic_id}: no test file at {test_path}")
+            text = test_path.read_text(encoding="utf-8")
+            labelled = set(re.findall(r'TEST_FOUNDATION\(\s*"([^"]+)"', text))
+            for component in exercise["components"]:
+                if component not in labelled:
+                    missing.append(f"{topic_id}/{exercise['id']}: no foundation test for {component!r}")
+        self.assertEqual([], missing, "\n".join(missing))
+
+    def test_components_cover_the_required_operation_categories(self):
+        # E-04: construction, insertion, deletion, lookup, traversal, cleanup. A
+        # component list that misses a category means an operation the learner can
+        # get wrong with no test to catch it.
+        gaps: list[str] = []
+        for topic_id, exercise in _implementation_exercises().items():
+            declared = [c.lower() for c in exercise["components"]]
+            analogues = CATEGORY_ANALOGUES.get(topic_id, {})
+            for category, patterns in REQUIRED_COMPONENT_CATEGORIES.items():
+                if any(any(p in name for p in patterns) for name in declared):
+                    continue
+                if category in analogues:
+                    continue
+                gaps.append(
+                    f"{topic_id}/{exercise['id']}: components cover no {category} "
+                    f"and no analogue is declared"
+                )
+        self.assertEqual([], gaps, "\n".join(gaps))
+
+    def test_technique_topics_declare_a_native_supporting_structure(self):
+        # M-07: a technique topic must introduce the structure its technique
+        # operates on. Without this a technique topic can satisfy the every-topic
+        # exercise rule with an unrelated container, which is exactly what the rule
+        # exists to prevent.
+        missing: list[str] = []
+        for topic_id in sorted(TECHNIQUE_TOPICS):
+            meta_path = TOPICS_DIR / topic_id / "topic_meta.json"
+            self.assertTrue(meta_path.exists(), f"{topic_id}: no topic_meta.json")
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            declared = meta.get("supporting_structure")
+            if not declared:
+                missing.append(f"{topic_id}: no supporting_structure")
+                continue
+            if declared.get("native_to_technique") is not True:
+                missing.append(f"{topic_id}: native_to_technique is not true")
+            if not str(declared.get("rationale", "")).strip():
+                missing.append(f"{topic_id}: empty rationale")
+            if not str(declared.get("name", "")).strip():
+                missing.append(f"{topic_id}: empty name")
+        self.assertEqual([], missing, "\n".join(missing))
+
+    def test_structure_topics_do_not_claim_a_supporting_structure(self):
+        # The converse, so M-07 cannot be satisfied by declaring the field
+        # everywhere and losing its meaning.
+        offenders: list[str] = []
+        for topic_id in topic_ids():
+            if topic_id in TECHNIQUE_TOPICS:
+                continue
+            meta = json.loads((TOPICS_DIR / topic_id / "topic_meta.json").read_text(encoding="utf-8"))
+            if meta.get("supporting_structure"):
+                offenders.append(f"{topic_id}: structure topic declares supporting_structure")
+        self.assertEqual([], offenders, "\n".join(offenders))
+
+    def test_implementation_exercises_are_not_stdin_problem_shapes(self):
+        # An implementation exercise embeds a topic's theory. It must not smuggle in
+        # the problem-statement-only shape of an IO exercise.
+        offenders: list[str] = []
+        for topic_id, exercise in _implementation_exercises().items():
+            for banned in ("input_format", "output_format", "sample_input", "stdin"):
+                if banned in exercise:
+                    offenders.append(f"{topic_id}/{exercise['id']}: declares {banned}")
+        self.assertEqual([], offenders, "\n".join(offenders))
+
+
+class TestGateG10HintIntegrity(unittest.TestCase):
+    """G-10 (E-05, E-06, FR-031, FR-032, SC-017, SC-018).
+
+    Three escalating tiers, and no tier may hand over an implementation.
+    """
+
+    def test_every_implementation_exercise_has_three_escalating_tiers(self):
+        problems: list[str] = []
+        for topic_id, exercise in _implementation_exercises().items():
+            hints = exercise.get("hints") or []
+            label = f"{topic_id}/{exercise['id']}"
+            if len(hints) < 3:
+                problems.append(f"{label}: {len(hints)} hint tiers, need >= 3")
+                continue
+            tiers = [h.get("tier") for h in hints]
+            if tiers != sorted(tiers):
+                problems.append(f"{label}: tiers out of order {tiers}")
+            if len(set(tiers)) != len(tiers):
+                problems.append(f"{label}: duplicate tier numbers {tiers}")
+            for hint in hints:
+                if not str(hint.get("content_markdown", "")).strip():
+                    problems.append(f"{label}: tier {hint.get('tier')} is empty")
+                if not str(hint.get("title", "")).strip():
+                    problems.append(f"{label}: tier {hint.get('tier')} has no title")
+        self.assertEqual([], problems, "\n".join(problems))
+
+    def test_tiers_grow_in_specificity(self):
+        """E-05: three tiers in *escalating* specificity.
+
+        "Escalating" is checked semantically rather than by length: a later tier must
+        name at least as many of the exercise's own declared operations as the one
+        before it, and the final tier must name strictly more than the first. A tier
+        that is longer but says no more is not more specific, and a tier that drops
+        back to fewer operations is not an escalation at all.
+        """
+        problems: list[str] = []
+        for topic_id, exercise in _implementation_exercises().items():
+            hints = sorted(exercise.get("hints") or [], key=lambda h: h.get("tier", 0))
+            label = f"{topic_id}/{exercise['id']}"
+            components = [c.lower() for c in exercise["components"]]
+            coverage = [
+                sum(1 for name in components if name in h["content_markdown"].lower())
+                for h in hints
+            ]
+            for index in range(1, len(coverage)):
+                if coverage[index] < coverage[index - 1]:
+                    problems.append(
+                        f"{label}: tier {hints[index]['tier']} names {coverage[index]} "
+                        f"operations, fewer than tier {hints[index - 1]['tier']}'s "
+                        f"{coverage[index - 1]}"
+                    )
+            if coverage and coverage[-1] <= coverage[0]:
+                problems.append(
+                    f"{label}: final tier names {coverage[-1]} operations, not more "
+                    f"than the first tier's {coverage[0]}"
+                )
+        self.assertEqual([], problems, "\n".join(problems))
+
+    def test_no_tier_contains_working_implementation_code(self):
+        # E-06 / FR-032. A learner who can read the answer out of a hint has not been
+        # asked to derive it. Rejected: fenced code blocks, loop/conditional/return
+        # statements, and bare call statements.
+        offenders: list[str] = []
+        for topic_id, exercise in _implementation_exercises().items():
+            label = f"{topic_id}/{exercise['id']}"
+            for hint in exercise.get("hints") or []:
+                content = hint.get("content_markdown", "")
+                tier = hint.get("tier")
+                if _HINT_CODE_FENCE.search(content):
+                    offenders.append(f"{label}: tier {tier} contains a fenced code block")
+                # Only inspect the body of each prose line; backticked signatures are
+                # allowed because they name an interface without implementing it.
+                body = re.sub(r"`[^`]*`", "", content)
+                if _HINT_BARE_BODY.search(body):
+                    offenders.append(f"{label}: tier {tier} contains implementation statements")
+        self.assertEqual([], offenders, "\n".join(offenders))
+
+    def test_hint_gate_is_not_vacuous(self):
+        """Prove the checks above can actually fail.
+
+        A gate that never matches anything is indistinguishable from a passing one.
+        This feeds the detectors a deliberately bad tier and asserts they reject it.
+        """
+        bad_fenced = "Use this:\n\n```cpp\nint f() { return 1; }\n```"
+        bad_body = "Then do this:\n  for (int i = 0; i < n; ++i)\n  return 0;"
+        self.assertIsNotNone(_HINT_CODE_FENCE.search(bad_fenced), "fenced-block detector missed a fence")
+        self.assertIsNotNone(
+            _HINT_BARE_BODY.search(re.sub(r"`[^`]*`", "", bad_body)),
+            "statement detector missed a loop and a return",
+        )
+        # And a legitimately specific tier that only names interfaces passes.
+        good = (
+            "- `void push(int value)` -- bounds-checked, mask from `1ULL`.\n"
+            "- `int count() const` -- Kernighan's trick."
+        )
+        self.assertIsNone(_HINT_CODE_FENCE.search(good))
+        self.assertIsNone(_HINT_BARE_BODY.search(re.sub(r"`[^`]*`", "", good)))
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main(verbosity=2)

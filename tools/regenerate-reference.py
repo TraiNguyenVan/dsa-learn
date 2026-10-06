@@ -48,6 +48,29 @@ def viz_for(topic_id: str) -> list[str]:
     return [op.get("id", "") for op in json.loads(path.read_text(encoding="utf-8")).get("operations", [])]
 
 
+def _implementation_paragraph(cov: dict) -> str:
+    """Describe the implementation-exercise state truthfully in either direction.
+
+    A single hardcoded sentence about the remaining gap would go stale the moment the
+    gap closed, which is exactly the kind of hand-maintained claim this document
+    exists to avoid.
+    """
+    missing = cov["topic_count"] - cov["topics_with_implementation_exercise"]
+    if missing:
+        return (
+            f"- **Implementation exercises**: {missing} of {cov['topic_count']} topics have no "
+            f"`kind: \"implementation\"` exercise yet. Theory and animation are complete for all "
+            f"{cov['topic_count']}; the build-it-yourself loop is the remaining gap."
+        )
+    return (
+        f"- **Implementation exercises**: all {cov['topic_count']} topics now carry exactly one "
+        f"`kind: \"implementation\"` exercise ({cov['implementation_exercise_count']} in total), each "
+        "with per-operation foundation tests and a three-tier hint ladder. Technique-based topics "
+        "build the structure their technique operates on; structure topics build the structure that "
+        "is the topic."
+    )
+
+
 def main() -> None:
     cov = get_coverage_status()
     catalog = load_catalog()
@@ -115,10 +138,9 @@ before the technique can be applied.
 | :-- | :-- |
 {chr(10).join(f"| `{p['id']}` | {', '.join(f'`{t}`' for t in p['topic_ids'])} |" for p in sorted(patterns, key=lambda x: x['id']))}
 
-### What Is Not Yet Covered
+### Implementation Exercises
 
-- **Implementation exercises**: {cov['topic_count'] - cov['topics_with_implementation_exercise']} of {cov['topic_count']} topics have no `kind: "implementation"` exercise yet. Theory and animation are
-  complete for all {cov['topic_count']}; the build-it-yourself loop is the remaining gap.
+{_implementation_paragraph(cov)}
 - **Problem exercises are intentionally not growing.** This curriculum's scope is theory,
   cost derivations, and visualization; problem-exercise count is frozen at
   {cov['problem_exercise_count']} by design, not by omission.
@@ -126,9 +148,18 @@ before the technique can be applied.
 """
 
     text = DOC.read_text(encoding="utf-8")
-    # Replace everything from the old section 2 header up to (but excluding)
+    # Replace everything from the generated section 2 header up to (but excluding)
     # section 3, which is stable prose about the roadmap taxonomy.
-    start = text.index("## 2. Current Curriculum Alignment")
+    #
+    # The anchor must be the heading this script *writes*, or the second run finds
+    # nothing to replace and raises. Both spellings are accepted so the script also
+    # works against the first-generation document.
+    start_markers = ("## 2. Curriculum Coverage (generated)", "## 2. Current Curriculum Alignment")
+    start = next((text.index(m) for m in start_markers if m in text), -1)
+    if start < 0:
+        raise SystemExit(
+            f"could not find a section 2 anchor in {DOC}; expected one of {start_markers}"
+        )
     end = text.index("## 3. Roadmap.sh Module-by-Module Taxonomy")
     text = text[:start] + generated + "---\n\n" + text[end:]
     DOC.write_text(text, encoding="utf-8")
