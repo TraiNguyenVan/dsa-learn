@@ -624,3 +624,137 @@ export interface StaticCompletionEntry {
   isSnippet?: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Curriculum navigation (spec 007)
+//
+// Mirrors the shapes in
+// specs/007-concept-theory-navigation/data-model.md and the endpoint contract
+// in contracts/navigation-graph-contract.md.
+// ---------------------------------------------------------------------------
+
+/** A topic flattened for display inside a graph context.
+ *
+ *  A projection of `TopicSummary`, not a second entity. `title` is the whole
+ *  point: FR-001 exists because the interface used to render a de-slugified id
+ *  (`linked lists`) instead of the real name (`Linked Lists`). Consumers MUST
+ *  NOT synthesise a label from `id`.
+ */
+export interface GraphNode {
+  id: string;
+  title: string;
+  description: string;
+  display_order: number | null;
+  exercise_count: number;
+  completed_count: number;
+  /** Always true on a node. Unresolvable references appear in
+   *  `CurriculumGraph.unresolved`, never as a node (invariant I-5). */
+  resolved: boolean;
+}
+
+/** A declared prerequisite naming a topic that does not exist.
+ *
+ *  Reported so it can be corrected in the curriculum source rather than
+ *  silently hidden (FR-007). Never substituted with a placeholder topic.
+ */
+export interface UnresolvedReference {
+  referenced_by: string;
+  referenced_id: string;
+  resolved: false;
+}
+
+export type NeighbourReason = 'shared-prerequisite' | 'adjacent-in-order';
+
+/** A topic offered as related to the current one, with the reason shown.
+ *
+ *  FR-017 requires the reason: an unexplained suggestion is
+ *  indistinguishable from noise.
+ */
+export interface NeighbourSuggestion {
+  node: GraphNode;
+  reason: NeighbourReason;
+  /** Display names of the shared prerequisites. Empty for
+   *  `adjacent-in-order` suggestions. */
+  shared_prerequisite_titles: string[];
+}
+
+/** The whole navigation surface, from one request. */
+export interface CurriculumGraph {
+  nodes: GraphNode[];
+  prerequisites_by_topic: Record<string, GraphNode[]>;
+  dependents_by_topic: Record<string, GraphNode[]>;
+  neighbours_by_topic: Record<string, NeighbourSuggestion[]>;
+  /** Always present, possibly empty — so a consumer never has to distinguish
+   *  "no unresolved references" from "not reported" (R-009). */
+  unresolved: UnresolvedReference[];
+}
+
+export interface TopicSearchResult {
+  node: GraphNode;
+  /** Lower is better: 0 title prefix, 1 title substring, 2 description
+   *  substring, 3 lesson section-heading substring. */
+  rank: number;
+  /** Headings that caused the match. Empty when the match came from the title
+   *  or description. */
+  matched_sections: string[];
+}
+
+export interface TopicSearchResponse {
+  query: string;
+  results: TopicSearchResult[];
+  result_count: number;
+}
+
+/** The four existing topic views. */
+export type TopicView = 'concept' | 'visualizer' | 'patterns' | 'exercises';
+
+/** A durable, referenceable position (data-model 7).
+ *
+ *  The unit that back/forward, refresh, bookmarking, sharing, and
+ *  open-in-new-tab all act on.
+ */
+export interface LearningLocation {
+  topic_id: string;
+  view: TopicView;
+  /** Only meaningful when `view` is `concept`. */
+  section_id?: string;
+  /** Only meaningful when `view` is `exercises`. */
+  exercise_id?: string;
+}
+
+/** Unvalidated fields scraped from an address. Never rendered directly. */
+export interface RawLocation {
+  topic?: string;
+  view?: string;
+  section?: string;
+  exercise?: string;
+}
+
+export type LocationProblemField = 'topic' | 'view' | 'section' | 'exercise' | 'syntax';
+
+/** A downgrade applied during validation.
+ *
+ *  Recorded rather than silent: L-6 requires it, because a silently swallowed
+ *  stale link hides the problem from the person who clicked it.
+ */
+export interface LocationProblem {
+  field: LocationProblemField;
+  given: string | null;
+  /** Human-readable, shown to the learner. */
+  reason: string;
+}
+
+/** A location guaranteed to be renderable, plus what had to be fixed. */
+export interface ResolvedLocation {
+  location: LearningLocation;
+  problems: LocationProblem[];
+  usedFallbackTopic: boolean;
+  usedFallbackView: boolean;
+}
+
+/** Response from recording the reading position (FR-015). */
+export interface ReadingPositionResponse {
+  topic_id: string;
+  last_read_section: string;
+  updated_at: string;
+}
+

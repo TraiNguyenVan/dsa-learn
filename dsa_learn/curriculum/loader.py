@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from dsa_learn.storage.db import get_hint_history, get_lesson_progress
+from dsa_learn.storage.db import get_all_progress, get_hint_history, get_lesson_progress
 
 CURRICULUM_DIR = Path(__file__).resolve().parent
 TOPICS_DIR = CURRICULUM_DIR / "topics"
@@ -444,4 +444,279 @@ def get_exercise_hints(topic_id: str, exercise_id: str, db_path: Path | None = N
         "total_hints": len(hints_meta),
         "max_unlocked_tier": max_unlocked,
         "hints": formatted_hints,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Curriculum navigation graph (spec 007, contract navigation-graph-contract.md)
+#
+# FR-006: the prerequisite edges are declared once, in each topic's
+# `prerequisites` list inside catalog.json, and BOTH directions are derived
+# from that single declaration. No consumer may hard-code a relationship, and
+# gate G-14 enforces that every key emitted here names a real topic.
+#
+# FR-008: derivation is a single pass with no recursion. It therefore
+# terminates on any input, including a cyclic catalog, without needing
+# cycle detection -- nothing here computes transitive closure or depth.
+#
+# R-007: every emitted list is sorted explicitly. Dict and set iteration order
+# is insertion- and hash-dependent, so unsorted returns would make two calls
+# over identical content differ, breaking Principle V determinism (I-8).
+# ---------------------------------------------------------------------------
+
+# FR-019: the suggestion block must not become a second navigation menu that
+# buries the lesson body. R-002 caps it here rather than in the client.
+MAX_NEIGHBOURS_PER_TOPIC = 5
+
+
+def _graph_sort_key(node: dict[str, Any]) -> tuple[int, str]:
+    """Deterministic ordering for graph lists: display_order, then id."""
+    order = node.get("display_order")
+    return (order if isinstance(order, int) else 10**6, str(node.get("id", "")))
+
+
+def _project_graph_node(topic: dict[str, Any], progress_map: dict[str, Any]) -> dict[str, Any]:
+    """Flatten a catalog topic into a display-ready GraphNode (data-model 3).
+
+    A projection, not a second entity: it carries no authoritative state and is
+    rebuilt on every request, so it cannot drift from `catalog.json`.
+    """
+    exercises = topic.get("exercises", []) or []
+    completed = sum(
+        1 for e in exercises if progress_map.get(e.get("id", ""), {}).get("status") == "COMPLETED"
+    )
+    return {
+        "id": topic.get("id", ""),
+        "title": topic.get("title", ""),
+        "description": topic.get("description", ""),
+        "display_order": topic.get("display_order"),
+        "exercise_count": len(exercises),
+        "completed_count": completed,
+        # Always true on a GraphNode (I-5). Unresolvable references are never
+        # projected here; they surface only via `unresolved`.
+        "resolved": True,
+    }
+
+
+def _section_titles(topic_id: str) -> list[str]:
+    """Lesson section headings for `topic_id`, via the shared section parser.
+
+    R-003: reuses `parse_markdown_sections` rather than adding a second markdown
+    split, so search matches exactly the headings the lesson actually renders.
+    A topic with no authored lesson contributes no headings -- it still matches
+    on title and description.
+    """
+    lesson_file = TOPICS_DIR / topic_id / "lesson.md"
+    if not lesson_file.exists():
+        return []
+    try:
+        text = lesson_file.read_text(encoding="utf-8")
+    except Exception:
+        return []
+    return [s["title"] for s in parse_markdown_sections(text)]
+
+
+def curriculum_graph(db_path: Path | None = None) -> dict[str, Any]:
+    """Derive the bidirectional curriculum navigation graph.
+
+    Implements the derivation rules and invariants I-1..I-10 of
+    specs/007-concept-theory-navigation/contracts/navigation-graph-contract.md.
+    """
+    empty: dict[str, Any] = {
+        "nodes": [],
+        "prerequisites_by_topic": {},
+        "dependents_by_topic": {},
+        "neighbours_by_topic": {},
+        # Always present, possibly empty (R-009), so a consumer never has to
+        # distinguish "no unresolved references" from "not reported".
+        "unresolved": [],
+    }
+    if not CATALOG_PATH.exists():
+        return empty
+
+    try:
+        catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return empty
+
+    topics = catalog.get("topics", []) or []
+    if not topics:
+        return empty
+
+    progress_map = get_all_progress(db_path)
+
+    nodes: dict[str, dict[str, Any]] = {}
+    declared: dict[str, list[str]] = {}
+    for topic in topics:
+        node = _project_graph_node(topic, progress_map)
+        nodes[node["id"]] = node
+        declared[node["id"]] = list(topic.get("prerequisites", []) or [])
+
+    ordered_ids = sorted(nodes, key=lambda tid: _graph_sort_key(nodes[tid]))
+
+    # Outbound: what each topic declares it builds on.
+    prerequisites: dict[str, list[dict[str, Any]]] = {}
+    dependents: dict[str, list[dict[str, Any]]] = {tid: [] for tid in ordered_ids}
+    unresolved: list[dict[str, Any]] = []
+
+    for tid in ordered_ids:
+        resolved_prereqs: list[dict[str, Any]] = []
+        for prereq_id in declared[tid]:
+            target = nodes.get(prereq_id)
+            if target is None:
+                # FR-007: report it so the curriculum source can be corrected.
+                # Never substitute a placeholder topic (R-009) and never drop
+                # it silently.
+                unresolved.append(
+                    {"referenced_by": tid, "referenced_id": prereq_id, "resolved": False}
+                )
+                continue
+            resolved_prereqs.append(target)
+            dependents[prereq_id].append(nodes[tid])
+        resolved_prereqs.sort(key=_graph_sort_key)
+        prerequisites[tid] = resolved_prereqs
+
+    for tid in ordered_ids:
+        dependents[tid].sort(key=_graph_sort_key)
+
+    # FR-004 / FR-005: a topic with no prerequisites or no dependents gets an
+    # empty list here, and the interface omits the block or states the absence.
+    # Absent and empty are the same signal -- a consumer must not have to tell
+    # them apart.
+    neighbours = _derive_neighbours(nodes, ordered_ids, declared, prerequisites, dependents)
+
+    return {
+        "nodes": [nodes[tid] for tid in ordered_ids],
+        "prerequisites_by_topic": prerequisites,
+        "dependents_by_topic": dependents,
+        "neighbours_by_topic": neighbours,
+        "unresolved": sorted(
+            unresolved, key=lambda r: (r["referenced_by"], r["referenced_id"])
+        ),
+    }
+
+
+def _derive_neighbours(
+    nodes: dict[str, dict[str, Any]],
+    ordered_ids: list[str],
+    declared: dict[str, list[str]],
+    prerequisites: dict[str, list[dict[str, Any]]],
+    dependents: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """R-002 neighbour suggestion: siblings first, then order-adjacent.
+
+    A topic that is already shown in the current topic's prerequisite or
+    dependent block MUST NOT also appear here (I-9) -- otherwise the same topic
+    renders three times on one page.
+    """
+    order_index = {tid: i for i, tid in enumerate(ordered_ids)}
+    result: dict[str, list[dict[str, Any]]] = {}
+
+    for tid in ordered_ids:
+        excluded = {p["id"] for p in prerequisites.get(tid, [])}
+        excluded |= {d["id"] for d in dependents.get(tid, [])}
+        excluded.add(tid)
+
+        own_prereqs = {p for p in declared.get(tid, []) if p in nodes}
+
+        # Each entry is (negative shared count, sort key, other id, shared titles).
+        # Negating the count makes "more shared prerequisites" sort first.
+        siblings: list[tuple[int, tuple[int, str], str, list[str]]] = []
+        for other in ordered_ids:
+            if other in excluded:
+                continue
+            other_prereqs = {p for p in declared.get(other, []) if p in nodes}
+            shared = own_prereqs & other_prereqs
+            if not shared:
+                continue
+            shared_titles = sorted(nodes[p]["title"] for p in shared if p in nodes)
+            siblings.append((-len(shared), _graph_sort_key(nodes[other]), other, shared_titles))
+
+        siblings.sort(key=lambda e: (e[0], e[1]))
+
+        suggestions: list[dict[str, Any]] = []
+        for _rank, _key, other, shared_titles in siblings:
+            suggestions.append(
+                {
+                    "node": nodes[other],
+                    "reason": "shared-prerequisite",
+                    "shared_prerequisite_titles": shared_titles,
+                }
+            )
+            if len(suggestions) >= MAX_NEIGHBOURS_PER_TOPIC:
+                break
+
+        if len(suggestions) < MAX_NEIGHBOURS_PER_TOPIC:
+            idx = order_index[tid]
+            # The immediately preceding and following topic in learning order.
+            # This is the fallback that still yields something sensible for
+            # `math-bitwise`, which shares no prerequisite with anything.
+            for offset in (-1, 1):
+                pos = idx + offset
+                if not (0 <= pos < len(ordered_ids)):
+                    continue
+                other = ordered_ids[pos]
+                if other in excluded:
+                    continue
+                suggestions.append(
+                    {
+                        "node": nodes[other],
+                        "reason": "adjacent-in-order",
+                        "shared_prerequisite_titles": [],
+                    }
+                )
+                if len(suggestions) >= MAX_NEIGHBOURS_PER_TOPIC:
+                    break
+
+        result[tid] = suggestions[:MAX_NEIGHBOURS_PER_TOPIC]
+
+    return result
+
+
+def search_topics(query: str, db_path: Path | None = None) -> dict[str, Any]:
+    """Concept-first topic search (FR-018, contract navigation-graph-contract.md 3).
+
+    Matches topic title, description, and lesson section headings. Section
+    headings come from `parse_markdown_sections` so they match exactly what the
+    lesson renders (R-003). A topic with no matching exercise is still
+    returned -- that is what makes this a concept-first path rather than another
+    exercise filter.
+    """
+    term = (query or "").strip().lower()
+    if not term:
+        return {"query": query or "", "results": [], "result_count": 0}
+
+    graph = curriculum_graph(db_path)
+    nodes = graph["nodes"]
+    results: list[tuple[int, tuple[int, str], dict[str, Any], list[str]]] = []
+
+    for node in nodes:
+        title = node["title"].lower()
+        description = node["description"].lower()
+
+        matched_sections: list[str] = []
+        if term in title and title.startswith(term):
+            rank = 0
+        elif term in title:
+            rank = 1
+        elif term in description:
+            rank = 2
+        else:
+            section_titles = _section_titles(node["id"])
+            matched_sections = [t for t in section_titles if term in t.lower()]
+            if not matched_sections:
+                continue
+            rank = 3
+
+        results.append((rank, _graph_sort_key(node), node, matched_sections))
+
+    results.sort(key=lambda r: (r[0], r[1]))
+
+    return {
+        "query": query,
+        "results": [
+            {"node": node, "rank": rank, "matched_sections": matched}
+            for rank, _key, node, matched in results
+        ],
+        "result_count": len(results),
     }

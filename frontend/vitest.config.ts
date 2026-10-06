@@ -14,10 +14,16 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // jsdom lacks IntersectionObserver, which ConceptLessonViewer mounts. Pure
+    // no-op polyfills — see vitest.setup.ts.
+    setupFiles: ['./vitest.setup.ts'],
     // Scoped to the suites that import from 'vitest'. The repo also has
     // node:test / self-shimmed harnesses that vitest must not try to collect.
     include: [
       'src/lib/__tests__/**/*.test.ts',
+      // spec 007 G-19/G-20: pure location encode/parse/validate. No React, no
+      // DOM -- deliberately runnable without mounting the tree.
+      'src/components/curriculum/__tests__/**/*.test.ts',
       'src/components/concept/__tests__/**/*.test.tsx',
       'src/components/problem/__tests__/**/*.test.tsx',
       'src/components/debugger/__tests__/**/*.test.ts',

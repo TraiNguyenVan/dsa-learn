@@ -83,6 +83,16 @@ class DSAHTTPRequestHandler(SimpleHTTPRequestHandler):
                 status, data = handlers.get_coverage_handler()
                 self._send_json(status, data)
                 return
+            # spec 007: the bidirectional curriculum navigation graph.
+            if path == "/api/curriculum/graph":
+                status, data = handlers.get_graph_handler()
+                self._send_json(status, data)
+                return
+            # spec 007 FR-018: concept-first topic search.
+            if path == "/api/curriculum/search":
+                status, data = handlers.search_topics_handler(query)
+                self._send_json(status, data)
+                return
             if path.startswith("/api/curriculum/topics/"):
                 parts = path.split("/")
                 if len(parts) == 6 and parts[5] == "lesson":
@@ -156,6 +166,14 @@ class DSAHTTPRequestHandler(SimpleHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length", 0))
                 body_bytes = self.rfile.read(length) if length > 0 else b"{}"
                 status, data = handlers.post_lesson_progress_handler(topic_id, body_bytes)
+                self._send_json(status, data)
+                return
+            # spec 007 FR-015: reading position, kept separate from completion.
+            if len(parts) == 7 and parts[5] == "lesson" and parts[6] == "position":
+                topic_id = parts[4]
+                length = int(self.headers.get("Content-Length", 0))
+                body_bytes = self.rfile.read(length) if length > 0 else b"{}"
+                status, data = handlers.post_reading_position_handler(topic_id, body_bytes)
                 self._send_json(status, data)
                 return
             if len(parts) == 7 and parts[5] == "visualizer" and parts[6] == "progress":
@@ -289,7 +307,8 @@ class DSAHTTPRequestHandler(SimpleHTTPRequestHandler):
                 "<body style='font-family:sans-serif;background:#0F172A;color:#F8FAFC;padding:2rem;text-align:center;'>"
                 "<h1>DSA Learn Platform API Live</h1>"
                 "<p>API routes are operational at <code>/api/topics</code>, <code>/api/exercises</code>, <code>/api/progress</code>, <code>/api/tools</code>.</p>"
-                "<p>To view the React dashboard, build the frontend with <code>cd frontend && npm run build</code>.</p>"
+                "<p>To view the React dashboard, build the frontend with "
+                "<code>cd frontend &amp;&amp; npm ci &amp;&amp; npm run build</code>.</p>"
                 "</body></html>"
             ).encode("utf-8")
             self.send_response(200)

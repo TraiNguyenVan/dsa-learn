@@ -291,6 +291,80 @@ def update_lesson_progress(
     }
 
 
+def record_reading_position(
+    topic_id: str,
+    section_id: str,
+    db_path: Path | None = None,
+) -> dict[str, Any]:
+    """Record which lesson section the learner was last reading (spec 007, FR-015).
+
+    Position is deliberately independent of completion. A learner who skims
+    ahead has read further than they have completed, so conflating the two would
+    silently cap "resume where I left off" at the last section they *ticked*.
+
+    The critical invariant (contract navigation-graph-contract.md section 4,
+    P-2): this writes ONLY `last_read_section` and `updated_at`. It MUST NOT
+    touch `completed_sections_json`, `reading_progress_pct`, or `completed_at`,
+    so it is never an INSERT OR REPLACE and never a full-row rewrite.
+
+    No schema change: the `last_read_section` column has existed on
+    `lesson_progress` since spec 006 and was written by no code until now
+    (R-005), which is what makes FR-025's additive requirement structural
+    rather than a promise.
+
+    Returns the persisted position and the untouched completion state, so a
+    caller can verify the separation without a second query.
+    """
+    init_db(db_path)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    conn = get_db(db_path)
+
+    with conn:
+        row = conn.execute(
+            "SELECT topic_id, completed_sections_json, reading_progress_pct, completed_at "
+            "FROM lesson_progress WHERE topic_id = ?",
+            (topic_id,),
+        ).fetchone()
+
+        if row:
+            conn.execute(
+                """
+                UPDATE lesson_progress
+                SET last_read_section = ?, updated_at = ?
+                WHERE topic_id = ?
+                """,
+                (section_id, now_iso, topic_id),
+            )
+        else:
+            # A first visit with no completion at all. The completion columns are
+            # written at their schema defaults only -- never a derived value.
+            conn.execute(
+                """
+                INSERT INTO lesson_progress (topic_id, last_read_section, updated_at)
+                VALUES (?, ?, ?)
+                """,
+                (topic_id, section_id, now_iso),
+            )
+
+        after = conn.execute(
+            "SELECT completed_sections_json, reading_progress_pct, completed_at "
+            "FROM lesson_progress WHERE topic_id = ?",
+            (topic_id,),
+        ).fetchone()
+
+    conn.close()
+
+    return {
+        "topic_id": topic_id,
+        "last_read_section": section_id,
+        "updated_at": now_iso,
+        # Read back rather than assumed, so a caller can assert the invariant.
+        "completed_sections": json.loads(after["completed_sections_json"] or "[]"),
+        "progress_pct": after["reading_progress_pct"],
+        "completed_at": after["completed_at"],
+    }
+
+
 def get_hint_history(exercise_id: str, db_path: Path | None = None) -> list[int]:
     """Retrieve list of unlocked hint tiers for an exercise (e.g. [1, 2])."""
     init_db(db_path)

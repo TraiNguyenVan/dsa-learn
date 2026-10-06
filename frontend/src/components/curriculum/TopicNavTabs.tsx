@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Sparkles, Code2, Compass } from 'lucide-react';
+import { BookOpen, Sparkles, Code2, Compass, Network } from 'lucide-react';
 
 export type TopicViewMode = 'concept' | 'visualizer' | 'exercises' | 'patterns';
 
@@ -7,12 +7,17 @@ interface TopicNavTabsProps {
   activeMode: TopicViewMode;
   onModeChange: (mode: TopicViewMode) => void;
   topicTitle?: string;
+  /** spec 007 US5: toggle the whole-curriculum overview (FR-020). */
+  onShowOverview?: () => void;
+  showOverviewActive?: boolean;
 }
 
 export const TopicNavTabs: React.FC<TopicNavTabsProps> = ({
   activeMode,
   onModeChange,
   topicTitle,
+  onShowOverview,
+  showOverviewActive = false,
 }) => {
   const tabs = [
     {
@@ -73,12 +78,31 @@ export const TopicNavTabs: React.FC<TopicNavTabsProps> = ({
         })}
       </div>
 
-      {topicTitle && (
-        <div className="hidden md:flex items-center space-x-2 text-xs text-slate-400 font-mono">
-          <span className="text-slate-500">Active Topic:</span>
-          <span className="text-slate-200 font-semibold">{topicTitle}</span>
-        </div>
-      )}
+      <div className="flex items-center gap-3">
+        {topicTitle && (
+          <div className="hidden md:flex items-center space-x-2 text-xs text-slate-400 font-mono">
+            <span className="text-slate-500">Active Topic:</span>
+            <span className="text-slate-200 font-semibold">{topicTitle}</span>
+          </div>
+        )}
+
+        {/* spec 007 FR-020: the one place to survey the whole curriculum and
+            open any topic's lesson in a single click. */}
+        {onShowOverview && (
+          <button
+            onClick={onShowOverview}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              showOverviewActive
+                ? 'bg-slate-800 text-emerald-400 border border-slate-700'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
+            }`}
+            title="See every topic and what each one builds on"
+          >
+            <Network className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">Curriculum Map</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node --test src/components/layout/__tests__/headerShortcutsModal.test.mjs",
+    "test": "node --test src/components/layout/__tests__/headerShortcutsModal.test.mjs src/components/curriculum/__tests__/*.node.test.mjs",
     "test:ui": "npm test",
     "test:unit": "vitest run"
   },

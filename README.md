@@ -208,8 +208,34 @@ Frontend tests (requires Node 18+):
 
 ```bash
 cd frontend && npm run test:unit        # vitest
-cd frontend && npm test                 # node:test shortcuts suite
+cd frontend && npm test                 # node:test location + shortcuts suites
 ```
+
+### Rebuilding the dashboard bundle
+
+`frontend/dist/` is committed on purpose: it is what lets the dashboard run on a machine with no
+Node installed. The consequence is that it can silently fall behind `frontend/src`, and the running
+dashboard would then serve an interface that no longer matches the code. So after changing any file
+under `frontend/src`, rebuild and commit the bundle:
+
+```bash
+cd frontend
+npm ci                 # first time only; needs network
+npm run build          # refreshes dist/
+```
+
+If the build runs out of memory on the monaco bundle, raise the Node heap:
+
+```bash
+cd frontend && NODE_OPTIONS="--max-old-space-size=4096" npm run build
+```
+
+Use `4096`, not the default and not `8192`: the default (~2 GB) is not enough for the monaco
+bundle, and `8192` exceeds physical memory on an 8 GB machine and dies with a segmentation fault
+during chunk rendering.
+
+`tests/test_frontend_dist.py` fails when `dist/` is older than `frontend/src`, so a forgotten
+rebuild is caught by the test suite rather than discovered by a learner looking at a stale UI.
 
 Built with [spec-kit](https://github.com/github/spec-kit). Features are specced under `specs/`
 and checked against `.specify/memory/constitution.md`, which defines the quality gates for

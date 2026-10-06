@@ -32,6 +32,7 @@ compile_flags.txt
 .dsa/*.db-shm
 
 # Frontend / Node.js
+node_modules/
 frontend/node_modules/
 frontend/.vite/
 *.log

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { ResizableLayout } from '@/components/layout/ResizableLayout';
 import { CurriculumSidebar } from '@/components/curriculum/CurriculumSidebar';
@@ -12,7 +12,11 @@ import { DebuggerPanel } from '@/components/debugger/DebuggerPanel';
 import { useDebugger, debugShortcutAction } from '@/components/debugger/useDebugger';
 import { SolutionModal } from '@/components/problem/SolutionModal';
 import { TopicNavTabs, TopicViewMode } from '@/components/curriculum/TopicNavTabs';
+import { CurriculumOverview } from '@/components/curriculum/CurriculumOverview';
+import { parseCurriculumGraph } from '@/lib/curriculum/graphShape';
 import { ConceptLessonViewer } from '@/components/concept/ConceptLessonViewer';
+import { useLearningLocation } from '@/lib/location/useLearningLocation';
+import type { ValidationContext } from '@/lib/location/location';
 import { VisualizerContainer } from '@/components/visualizer/VisualizerContainer';
 import { PatternsContainer } from '@/components/patterns/PatternsContainer';
 import {
@@ -23,6 +27,7 @@ import {
   compileAndRunExercise,
   resetExercise,
   fetchToolsStatus,
+  fetchCurriculumGraph,
 } from '@/lib/api';
 import {
   TopicSummary,
@@ -32,6 +37,8 @@ import {
   CompileRunResult,
   ToolsStatus,
   DebugVariable,
+  CurriculumGraph,
+  TopicView,
 } from '@/lib/types';
 import type { DebugOutputStream } from '@/components/terminal/useTerminal';
 import { useSSE } from '@/lib/useEvents';
@@ -42,11 +49,58 @@ type BottomTab = 'runner' | 'compiler' | 'terminal' | 'debugger';
 export function App() {
   const [topics, setTopics] = useState<TopicSummary[]>([]);
   const [exercises, setExercises] = useState<ExerciseSummary[]>([]);
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [currentExercise, setCurrentExercise] = useState<ExerciseDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [activeMode, setActiveMode] = useState<TopicViewMode>('exercises');
+
+  // spec 007: which topic and which view are shown now is decided by the
+  // address, not by component state. T031/T032 replaced the previous
+  // selectedTopicId/activeMode pair, which could not be bookmarked, shared, or
+  // retraced with the browser's back button.
+  //
+  // Validation needs the curriculum, which loads asynchronously. Until it does,
+  // an empty context is passed so a legitimate deep link is never rejected —
+  // it merely falls back to the first topic and sharpens once the graph lands.
+  const locationContext = useMemo<ValidationContext>(
+    () => ({
+      knownTopicIds: topics.map((t) => t.id),
+      knownSectionIds: [],
+      knownExerciseIds: exercises.map((e) => e.id),
+      fallbackTopicId: topics[0]?.id ?? '',
+      fallbackExerciseId: exercises[0]?.id ?? null,
+    }),
+    [topics, exercises]
+  );
+
+  const learning = useLearningLocation({ context: locationContext });
+  const activeMode: TopicViewMode = learning.location.location.view;
+  const selectedTopicId = learning.location.location.topic_id;
+
+  // The graph powers the overview (US5) and the cross-topic link blocks.
+  const [graph, setGraph] = useState<CurriculumGraph | null>(null);
+  const [graphError, setGraphError] = useState<string | null>(null);
+  const [graphLoading, setGraphLoading] = useState(true);
+  const [showOverview, setShowOverview] = useState(false);
+
+  const loadGraph = useCallback(async () => {
+    try {
+      setGraphLoading(true);
+      setGraphError(null);
+      // Normalised rather than trusted: a malformed payload must degrade to
+      // "no cross-topic navigation", never to a crashing view (FR-014).
+      setGraph(parseCurriculumGraph(await fetchCurriculumGraph()));
+    } catch (err) {
+      // Advisory only (R-006): the lesson view stays fully usable.
+      setGraphError(err instanceof Error ? err.message : 'Failed to load curriculum graph');
+      setGraph(null);
+    } finally {
+      setGraphLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadGraph();
+  }, [loadGraph]);
 
   // Verification & Direct Run state
   const [testResult, setTestResult] = useState<VerificationResult | null>(null);
@@ -165,12 +219,20 @@ export function App() {
       setTopics(tData);
       setExercises(eData);
 
+      // spec 007 T032: in the exercises view the exercise comes from the
+      // address, so a shared link names a specific problem rather than
+      // whichever one happened to be first.
+      const fromLocation = learning.location.location.exercise_id;
       if (!selectedExerciseId && eData.length > 0) {
-        setSelectedExerciseId(eData[0].id);
+        const wanted = fromLocation && eData.some((e) => e.id === fromLocation) ? fromLocation : null;
+        setSelectedExerciseId(wanted ?? eData[0].id);
       }
     } catch (err) {
       console.error('Failed to load curriculum catalog', err);
     }
+    // `learning.location.location.exercise_id` is read once during the initial
+    // catalog load; later changes flow through the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedExerciseId]);
 
   useEffect(() => {
@@ -441,6 +503,70 @@ export function App() {
   const effectiveTopicId = selectedTopicId || currentExercise?.topic_id || (topics.length > 0 ? topics[0].id : null);
   const activeTopic = topics.find((t) => t.id === effectiveTopicId);
 
+  // -- location-derived navigation handlers (spec 007) ---------------------
+
+  /**
+   * FR-016 / H-8: choosing a topic must NOT change the view the learner is in.
+   * The previous code called `setActiveMode('concept')` inside the sidebar's
+   * topic handler in three of four branches, which is what ejected a learner
+   * out of a lesson the moment they picked another topic.
+   */
+  const handleSelectTopic = useCallback(
+    (topicId: string) => {
+      setShowOverview(false);
+      learning.update({ topic_id: topicId, section_id: undefined, exercise_id: undefined });
+    },
+    [learning]
+  );
+
+  const handleSelectExercise = useCallback(
+    (exerciseId: string) => {
+      setSelectedExerciseId(exerciseId);
+      setShowOverview(false);
+      // The exercises view is the one place the exercise is part of the
+      // location, so a shared link names a specific problem.
+      const topicId = exercises.find((e) => e.id === exerciseId)?.topic_id;
+      learning.update({
+        view: 'exercises',
+        ...(topicId ? { topic_id: topicId } : {}),
+        exercise_id: exerciseId,
+      });
+    },
+    [learning, exercises]
+  );
+
+  const handleModeChange = useCallback(
+    (mode: TopicViewMode) => {
+      learning.update({ view: mode as TopicView });
+    },
+    [learning]
+  );
+
+  /** Open a topic's concept & theory lesson. Used by every cross-topic link. */
+  const handleNavigateToTopic = useCallback(
+    (topicId: string) => {
+      setShowOverview(false);
+      // A cross-topic jump deliberately starts the destination lesson at its
+      // top: no cross-topic section mapping exists, and silently landing
+      // mid-lesson would be worse than landing at the start.
+      learning.navigate({ topic_id: topicId, view: 'concept' });
+    },
+    [learning]
+  );
+
+  const handleNavigateToVisualizer = useCallback(() => {
+    learning.update({ view: 'visualizer' });
+  }, [learning]);
+
+  const handleNavigateToExercises = useCallback(() => {
+    learning.update({ view: 'exercises' });
+  }, [learning]);
+
+  const locationNotice =
+    learning.location.problems.length > 0
+      ? learning.location.problems.map((p) => p.reason).join(' ')
+      : null;
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0F172A] overflow-hidden select-none">
       <Header
@@ -460,11 +586,15 @@ export function App() {
 
       <TopicNavTabs
         activeMode={activeMode}
-        onModeChange={setActiveMode}
+        onModeChange={handleModeChange}
         topicTitle={activeTopic?.title}
+        onShowOverview={() => setShowOverview((v) => !v)}
+        showOverviewActive={showOverview}
       />
 
-      {activeMode === 'concept' ? (
+      {showOverview ? (
+        // spec 007 US5: a single entry point into every topic's concept &
+        // theory lesson, reachable without an exercise in progress.
         <div className="flex-1 flex overflow-hidden">
           <div className="w-72 shrink-0 border-r border-slate-800 bg-[#121A2B]">
             <CurriculumSidebar
@@ -472,21 +602,43 @@ export function App() {
               exercises={exercises}
               selectedExerciseId={selectedExerciseId}
               selectedTopicId={effectiveTopicId}
-              onSelectExercise={(id) => {
-                setSelectedExerciseId(id);
-                setActiveMode('exercises');
-              }}
-              onSelectTopic={(topicId) => {
-                setSelectedTopicId(topicId);
-                setActiveMode('concept');
-              }}
+              onSelectExercise={handleSelectExercise}
+              onSelectTopic={handleSelectTopic}
+              onShowOverview={() => setShowOverview(true)}
+              showOverviewActive
+            />
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <CurriculumOverview
+              graph={graph}
+              loading={graphLoading}
+              error={graphError}
+              onNavigate={handleNavigateToTopic}
+              onRetry={loadGraph}
+            />
+          </div>
+        </div>
+      ) : activeMode === 'concept' ? (
+        <div className="flex-1 flex overflow-hidden">
+          <div className="w-72 shrink-0 border-r border-slate-800 bg-[#121A2B]">
+            <CurriculumSidebar
+              topics={topics}
+              exercises={exercises}
+              selectedExerciseId={selectedExerciseId}
+              selectedTopicId={effectiveTopicId}
+              onSelectExercise={handleSelectExercise}
+              onSelectTopic={handleSelectTopic}
+              onShowOverview={() => setShowOverview(true)}
             />
           </div>
           <div className="flex-1 overflow-hidden">
             <ConceptLessonViewer
               topicId={effectiveTopicId || 'arrays-hashing'}
-              onNavigateToVisualizer={() => setActiveMode('visualizer')}
-              onNavigateToExercises={() => setActiveMode('exercises')}
+              requestedSectionId={learning.location.location.section_id ?? null}
+              locationNotice={locationNotice}
+              onNavigateToVisualizer={handleNavigateToVisualizer}
+              onNavigateToExercises={handleNavigateToExercises}
+              onNavigateToTopic={handleNavigateToTopic}
             />
           </div>
         </div>
@@ -498,14 +650,9 @@ export function App() {
               exercises={exercises}
               selectedExerciseId={selectedExerciseId}
               selectedTopicId={effectiveTopicId}
-              onSelectExercise={(id) => {
-                setSelectedExerciseId(id);
-                setActiveMode('exercises');
-              }}
-              onSelectTopic={(topicId) => {
-                setSelectedTopicId(topicId);
-                setActiveMode('visualizer');
-              }}
+              onSelectExercise={handleSelectExercise}
+              onSelectTopic={handleSelectTopic}
+              onShowOverview={() => setShowOverview(true)}
             />
           </div>
           <div className="flex-1 overflow-hidden">
@@ -520,23 +667,15 @@ export function App() {
               exercises={exercises}
               selectedExerciseId={selectedExerciseId}
               selectedTopicId={effectiveTopicId}
-              onSelectExercise={(id) => {
-                setSelectedExerciseId(id);
-                setActiveMode('exercises');
-              }}
-              onSelectTopic={(topicId) => {
-                setSelectedTopicId(topicId);
-                setActiveMode('patterns');
-              }}
+              onSelectExercise={handleSelectExercise}
+              onSelectTopic={handleSelectTopic}
+              onShowOverview={() => setShowOverview(true)}
             />
           </div>
           <div className="flex-1 overflow-hidden">
             <PatternsContainer
               topicId={effectiveTopicId}
-              onSelectExercise={(id) => {
-                setSelectedExerciseId(id);
-                setActiveMode('exercises');
-              }}
+              onSelectExercise={handleSelectExercise}
             />
           </div>
         </div>
@@ -548,14 +687,9 @@ export function App() {
               exercises={exercises}
               selectedExerciseId={selectedExerciseId}
               selectedTopicId={effectiveTopicId}
-              onSelectExercise={(id) => {
-                setSelectedExerciseId(id);
-                setActiveMode('exercises');
-              }}
-              onSelectTopic={(topicId) => {
-                setSelectedTopicId(topicId);
-                setActiveMode('concept');
-              }}
+              onSelectExercise={handleSelectExercise}
+              onSelectTopic={handleSelectTopic}
+              onShowOverview={() => setShowOverview(true)}
             />
           }
           problemView={<ProblemViewer exercise={currentExercise} loading={loadingDetail} />}

@@ -320,6 +320,75 @@ def post_lesson_progress_handler(topic_id: str, body_bytes: bytes) -> tuple[int,
     return 200, updated
 
 
+# ---------------------------------------------------------------------------
+# Curriculum navigation (spec 007)
+# ---------------------------------------------------------------------------
+
+
+def get_graph_handler() -> tuple[int, dict[str, Any]]:
+    """GET /api/curriculum/graph - Bidirectional navigation graph.
+
+    One request per page load. FR-001 lives here: every node carries the real
+    display title from the catalog, because the interface used to render a
+    de-slugified id instead.
+    """
+    from dsa_learn.curriculum.loader import curriculum_graph
+
+    graph = curriculum_graph()
+    # An empty curriculum is a hard failure, not a navigation state: a single
+    # reachable topic is still a valid `200` with a one-node graph.
+    if not graph.get("nodes"):
+        return 404, {"error": "Curriculum catalog unavailable"}
+    return 200, graph
+
+
+def search_topics_handler(query: dict[str, list[str]]) -> tuple[int, dict[str, Any]]:
+    """GET /api/curriculum/search?q= - Concept-first topic search (FR-018)."""
+    from dsa_learn.curriculum.loader import search_topics
+
+    term = query.get("q", [None])[0]
+    if not term or not term.strip():
+        return 400, {
+            "error": "Query parameter 'q' is required",
+            "results": [],
+            "result_count": 0,
+        }
+    return 200, search_topics(term)
+
+
+def post_reading_position_handler(topic_id: str, body_bytes: bytes) -> tuple[int, dict[str, Any]]:
+    """POST /api/curriculum/topics/{topic_id}/lesson/position - Record reading position.
+
+    Distinct from the sibling `.../lesson/progress` endpoint on purpose: this
+    one records where the learner was reading, that one records what they
+    completed. FR-015 requires them to stay independent.
+    """
+    from dsa_learn.curriculum.loader import curriculum_graph
+
+    try:
+        payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+    except Exception:
+        return 400, {"error": "Invalid JSON body"}
+
+    section_id = payload.get("section_id")
+    if not section_id:
+        return 400, {"error": "Field 'section_id' is required"}
+
+    known_ids = {n["id"] for n in curriculum_graph().get("nodes", [])}
+    if topic_id not in known_ids:
+        return 404, {"error": "Topic not found", "topic_id": topic_id}
+
+    # An unknown section_id is accepted: a placeholder lesson's sections differ
+    # from the authored version, and read-back degrades to the lesson as a whole
+    # rather than erroring (location contract L-4).
+    updated = db.record_reading_position(topic_id, section_id)
+    return 200, {
+        "topic_id": updated["topic_id"],
+        "last_read_section": updated["last_read_section"],
+        "updated_at": updated["updated_at"],
+    }
+
+
 def post_visualizer_progress_handler(topic_id: str, body_bytes: bytes) -> tuple[int, dict[str, Any]]:
     """POST /api/curriculum/topics/{topic_id}/visualizer/progress - Record explored operations."""
     try:

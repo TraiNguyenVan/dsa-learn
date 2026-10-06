@@ -1,6 +1,7 @@
 import {
   CompileRunResult,
   ConceptLesson,
+  CurriculumGraph,
   DebugBuildResult,
   DecisionMatrixEntry,
   ExerciseDetail,
@@ -9,6 +10,8 @@ import {
   LessonReadingProgress,
   PatternBlueprint,
   ProgressOverviewData,
+  ReadingPositionResponse,
+  TopicSearchResponse,
   TopicSummary,
   ToolsStatus,
   UnlockHintResponse,
@@ -192,6 +195,46 @@ export async function savePlaybackPosition(
     }
   );
   if (!res.ok) throw new Error(`Failed to save playback position for ${topicId}/${operationId}`);
+  return res.json();
+}
+
+/**
+ * spec 007: the bidirectional curriculum navigation graph.
+ *
+ * Advisory by design (R-006). A failure here must never block lesson content —
+ * the learner came for the lesson, and the graph only decorates it. Callers
+ * treat a rejection as "no cross-topic navigation available" and render the
+ * lesson normally.
+ */
+export async function fetchCurriculumGraph(): Promise<CurriculumGraph> {
+  const res = await fetch(`${API_BASE}/curriculum/graph`);
+  if (!res.ok) throw new Error('Failed to fetch curriculum graph');
+  return res.json();
+}
+
+/** spec 007 FR-018: concept-first topic search. */
+export async function searchTopics(q: string): Promise<TopicSearchResponse> {
+  const res = await fetch(`${API_BASE}/curriculum/search?q=${encodeURIComponent(q)}`);
+  if (!res.ok) throw new Error('Failed to search topics');
+  return res.json();
+}
+
+/**
+ * spec 007 FR-015: record which lesson section the learner was reading.
+ *
+ * Deliberately separate from `updateLessonProgress`: position is where they
+ * were reading, completion is what they ticked. They must stay independent.
+ */
+export async function saveReadingPosition(
+  topicId: string,
+  sectionId: string
+): Promise<ReadingPositionResponse> {
+  const res = await fetch(`${API_BASE}/curriculum/topics/${topicId}/lesson/position`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ section_id: sectionId }),
+  });
+  if (!res.ok) throw new Error(`Failed to record reading position for ${topicId}`);
   return res.json();
 }
 
