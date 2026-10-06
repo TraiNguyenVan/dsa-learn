@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import signal
 import subprocess
+import sys
 import time
 import uuid
 from datetime import datetime, timezone
@@ -102,6 +103,43 @@ def aggregate_foundation_methods(tests_list: list[dict[str, Any]]) -> list[dict[
     return methods
 
 
+_WIN32_CRASH_CODES = {
+    0xC0000005: ("SIGSEGV", "Segmentation Fault (SIGSEGV): Out-of-bounds array access, null pointer dereference, or stack overflow."),
+    0xC000001D: ("SIGILL", "Illegal Instruction (SIGILL): Unsupported opcode or corrupted binary."),
+    0xC0000094: ("SIGFPE", "Floating Point Exception (SIGFPE): Integer divide by zero or overflow."),
+    0xC0000409: ("SIGSEGV", "Segmentation Fault (SIGSEGV): Stack buffer overrun detected."),
+    0xC0000374: ("SIGABRT", "Process Aborted (SIGABRT): Heap corruption detected."),
+}
+
+
+def _classify_crash(returncode: int, platform: str | None = None):
+    """Map an abnormal process exit to (sig_name, explanation, raw_message).
+
+    POSIX signals arrive as a negative returncode. On Windows a crash is
+    reported as the crashing NTSTATUS in a large positive exit code, so we
+    map the common failure codes there too. Returns None for normal or
+    unrecognized exits.
+    """
+    plat = platform or sys.platform
+    if returncode < 0:
+        sig_num = -returncode
+        members = signal.Signals.__members__.values()
+        sig_name = signal.Signals(sig_num).name if sig_num in members else f"Signal {sig_num}"
+        explanation = f"Process terminated abnormally due to {sig_name}."
+        if sig_num == signal.SIGSEGV:
+            explanation = "Segmentation Fault (SIGSEGV): Out-of-bounds array access, null pointer dereference, or stack overflow."
+        elif sig_num == signal.SIGABRT:
+            explanation = "Process Aborted (SIGABRT): An assertion failed or std::terminate was invoked."
+        return sig_name, explanation, f"Terminated with {sig_name}"
+    if plat == "win32":
+        rc = returncode & 0xFFFFFFFF
+        nt = _WIN32_CRASH_CODES.get(rc)
+        if nt is not None:
+            sig_name, explanation = nt
+            return sig_name, explanation, f"Terminated with {sig_name} (NTSTATUS 0x{rc:08X})"
+    return None
+
+
 def run_verification(
     exercise_id: str,
     solution_path: Path | None = None,
@@ -173,22 +211,19 @@ def run_verification(
         stderr = proc.stderr.strip()
         raw_output = (stdout + "\n" + stderr).strip()
 
-        # Handle process abnormal termination (segfault, abort, bus error)
-        if proc.returncode < 0:
-            sig_num = -proc.returncode
-            sig_name = signal.Signals(sig_num).name if sig_num in signal.Signals.__members__.values() else f"Signal {sig_num}"
-            explanation = f"Process terminated abnormally due to {sig_name}."
-            if sig_num == signal.SIGSEGV:
-                explanation = "Segmentation Fault (SIGSEGV): Out-of-bounds array access, null pointer dereference, or stack overflow."
-            elif sig_num == signal.SIGABRT:
-                explanation = "Process Aborted (SIGABRT): An assertion failed or std::terminate was invoked."
-
+        # Handle process abnormal termination (segfault, abort, bus error).
+        # POSIX reports these as negative returncodes; Windows surfaces the
+        # crashing NTSTATUS as a large positive exit code, so the negative
+        # check alone never fires there.
+        crash = _classify_crash(proc.returncode)
+        if crash is not None:
+            sig_name, explanation, raw_msg = crash
             diag = [{
                 "file": str(target_solution),
                 "line": 1,
                 "column": 1,
                 "severity": "error",
-                "raw_message": f"Terminated with {sig_name}",
+                "raw_message": raw_msg,
                 "explanation": explanation,
                 "suggestion": "Check for buffer overruns, uninitialized pointers, or deep recursion.",
             }]

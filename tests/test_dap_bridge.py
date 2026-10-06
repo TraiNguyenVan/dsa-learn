@@ -24,7 +24,9 @@ class TestDAPBridge(unittest.TestCase):
         res = compile_debug_binary(sol_file, test_file, out_bin)
         self.assertTrue(res.success)
         self.assertIsNotNone(res.binary_path)
-        self.assertTrue(out_bin.exists())
+        # MinGW appends .exe on Windows; assert against the real output path.
+        produced = Path(res.binary_path) if res.binary_path else out_bin
+        self.assertTrue(produced.exists())
 
 
 if __name__ == "__main__":

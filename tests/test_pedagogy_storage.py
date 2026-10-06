@@ -23,12 +23,15 @@ from dsa_learn.storage.db import (
 
 class TestPedagogyStorage(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.NamedTemporaryFile(suffix=".db")
-        self.db_path = Path(self.tmp.name)
+        # Windows locks files held open, so NamedTemporaryFile's live handle
+        # breaks sqlite3's second open of the same path. Create the path
+        # inside a TemporaryDirectory instead (no lingering handle).
+        self._tmp_dir = tempfile.TemporaryDirectory()
+        self.db_path = Path(self._tmp_dir.name) / "test.db"
         init_db(self.db_path)
 
     def tearDown(self):
-        self.tmp.close()
+        self._tmp_dir.cleanup()
 
     def test_lesson_progress_lifecycle(self):
         topic_id = "linked-lists"

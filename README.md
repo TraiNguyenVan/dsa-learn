@@ -11,7 +11,10 @@ Learners write and edit standard C++ source files in their own local editor (VS 
 - **Modern C++ Standard**: Authored in C++20 (`-std=c++20 -O2 -Wall -Wextra -pedantic`) using standard template library (STL) with clean, typed problem contracts.
 - **Dual-Surface Architecture**:
   - **Local Editor Surface**: Work directly on local `.cpp` files in `exercises/`.
+  - **In-Browser IDE Surface**: Monaco Editor (VS Code engine) with live file sync, integrated terminal, compile/run, and DAP debugging over local WebSockets.
   - **Visual Dashboard Surface**: Modern React 19 + Tailwind CSS + shadcn/ui dashboard running on `http://localhost:8080`.
+- **C++ IntelliSense in the Browser**: Autocompletion, hover docs, and signature help via a clangd LSP bridge with an offline static-STL fallback.
+- **DAP Debugging**: Breakpoints, stepping, watches, and call stacks via a local gdb/codelldb bridge.
 - **Multi-Tier Test Verification**:
   1. *Tier 1: Functional Correctness* (standard algorithmic test cases).
   2. *Tier 2: Boundary & Edge Cases* (empty inputs, single elements, extreme numeric values).
@@ -118,6 +121,11 @@ To run with verbose test output:
 ./dsa-learn test two-sum --verbose
 ```
 
+To get structured JSON output (for scripting):
+```bash
+./dsa-learn test two-sum --json
+```
+
 ### 4. Launch Web Dashboard
 
 ```bash
@@ -149,12 +157,16 @@ Open [http://localhost:8080](http://localhost:8080) to browse problems, track pr
 │   ├── cli/                           # CLI command handlers (test, list, serve, reset)
 │   ├── curriculum/                    # Curriculum catalog & protected test suites
 │   ├── runner/                        # C++ compiler wrapper, sandbox, dsa_test.hpp
-│   ├── server/                        # HTTP API server, SSE watcher, static file server
+│   ├── server/                        # HTTP API, SSE watcher, WebSocket, LSP/DAP/terminal bridges
 │   └── storage/                       # SQLite schema & repository (.dsa/progress.db)
 ├── exercises/                         # Learner workspace (edit your solutions here)
 ├── frontend/                          # React 19 + TypeScript + Vite + Tailwind dashboard
-│   ├── src/components/                # shadcn/ui primitives, split-pane layout, runner drawer
+│   ├── src/components/                # editor, debugger, terminal, visualizer, concept, curriculum, ui
 │   └── dist/                          # Pre-built standalone static assets
+├── design-system/                     # Shared design system assets
+├── docs/                              # Reference docs (roadmap-reference.md)
+├── specs/                             # Spec-kit feature specifications (001–004)
+├── .specify/                          # Spec-kit config, bugs, memory, integrations
 └── tests/                             # Automated Python test suites
 ```
 

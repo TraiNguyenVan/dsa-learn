@@ -106,7 +106,9 @@ class TestCompiler(unittest.TestCase):
         res = compile_exercise(sol, tests, out)
         self.assertTrue(res.success)
         self.assertIsNotNone(res.binary_path)
-        self.assertTrue(out.exists())
+        # MinGW appends .exe on Windows; assert against the real output path.
+        produced = Path(res.binary_path) if res.binary_path else out
+        self.assertTrue(produced.exists())
 
     def test_compile_syntax_error(self):
         temp_bad_sol = BUILD_DIR / "bad_syntax.cpp"
