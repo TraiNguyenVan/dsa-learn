@@ -1,0 +1,126 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "BFS or DFS traversal with an adjacency list",
+      "best_time": "O(V)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "V vertices plus E edges. Both terms necessary: an edgeless graph still costs O(V), a dense one is edge-dominated.",
+      "derivation_ref": "cost-derivations#traversal"
+    },
+    {
+      "operation": "Lower bound on any traversal reading an adjacency list",
+      "best_time": "Omega(V)",
+      "average_time": "Omega(V+E)",
+      "worst_time": "Omega(V+E)",
+      "space_complexity": "Omega(V)",
+      "notes": "A vertex with unexamined incident edges cannot be classified as connected or not, so every vertex and every edge must be read. BFS and DFS attain it.",
+      "derivation_ref": "cost-derivations#lower"
+    },
+    {
+      "operation": "Same traversal with an adjacency matrix",
+      "best_time": "O(V)",
+      "average_time": "O(V^2)",
+      "worst_time": "O(V^2)",
+      "space_complexity": "O(V^2)",
+      "notes": "Processing each vertex scans its whole row regardless of degree. Better only when E is genuinely dense.",
+      "derivation_ref": "cost-derivations#traversal"
+    },
+    {
+      "operation": "Dijkstra shortest path, binary heap",
+      "best_time": "O(V)",
+      "average_time": "O((V+E) log V)",
+      "worst_time": "O((V+E) log V)",
+      "space_complexity": "O(V+E)",
+      "notes": "V extractions at O(log V) plus O(E) relaxations. Requires non-negative weights; unsound otherwise.",
+      "derivation_ref": "cost-derivations#shortest"
+    },
+    {
+      "operation": "Dijkstra shortest path, array version or dense graph",
+      "best_time": "O(V)",
+      "average_time": "O(V^2)",
+      "worst_time": "O(V^2)",
+      "space_complexity": "O(V)",
+      "notes": "Linear scan for the minimum instead of a heap. Wins only when E is a constant fraction of V^2.",
+      "derivation_ref": "cost-derivations#shortest"
+    },
+    {
+      "operation": "Bellman-Ford with negative weights",
+      "best_time": "O(VE)",
+      "average_time": "O(VE)",
+      "worst_time": "O(VE)",
+      "space_complexity": "O(V)",
+      "notes": "V-1 passes relaxing every edge. The extra factor over Dijkstra is the price of tolerating negative weights."
+    },
+    {
+      "operation": "Floyd-Warshall all-pairs shortest path",
+      "best_time": "O(V)",
+      "average_time": "O(V^3)",
+      "worst_time": "O(V^3)",
+      "space_complexity": "O(V^2)",
+      "notes": "Dense-graph method, O(V) per source. The best known unconditional all-pairs bound.",
+      "derivation_ref": "cost-derivations#shortest"
+    },
+    {
+      "operation": "Topological sort",
+      "best_time": "O(V)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "Same Theta(V+E) tightness argument as traversal. Requires a DAG; a cycle is detected when no zero-in-degree vertex remains.",
+      "derivation_ref": "cost-derivations#topological"
+    },
+    {
+      "operation": "Union-find connectivity over E edges",
+      "best_time": "O(V)",
+      "average_time": "O(E alpha(V))",
+      "worst_time": "O(E alpha(V))",
+      "space_complexity": "O(V)",
+      "notes": "Near-linear. Below 5 operations per element for any practical V, so effectively linear.",
+      "derivation_ref": "cost-derivations#components"
+    },
+    {
+      "operation": "Tarjan strongly connected components",
+      "best_time": "O(V+E)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "One DFS pass using low-link values and a stack of unfinished vertices. Tight by the traversal bound."
+    },
+    {
+      "operation": "Cycle detection",
+      "best_time": "O(1)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "A back edge in the DFS forest is detected exactly when a cycle exists. No separate bound from traversal.",
+      "derivation_ref": "cost-derivations#components"
+    },
+    {
+      "operation": "Building the adjacency list from an edge list",
+      "best_time": "O(V)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V+E)",
+      "notes": "One bucket append per edge plus V bucket initialisations. The graph must exist before any traversal runs.",
+      "derivation_ref": "cost-derivations#traversal"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "A traversal visits exactly the vertices reachable from the source: safety holds by induction on iterations, since extending a path along an edge to a reached vertex reaches a reached vertex; completeness holds by induction along any path, since processing each visited vertex enqueues every unvisited neighbour."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Traversal costs Theta(V + E) \u2014 each vertex enqueued once, each edge examined once per direction \u2014 and Omega(V + E) is a matching lower bound because a vertex with unexamined incident edges cannot be classified as connected or not, so every vertex and edge must be read.",
+      "detail": "An adjacency matrix raises the same traversal to O(V^2), which is why the list is preferred whenever the graph is sparse."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "The traversal bound is tight, so traversal cannot be improved; Dijkstra's non-negative-weight restriction is falsifiable rather than a limitation of effort. Conditionally on the negative-weight triangle hypothesis, no combinatorial algorithm improves O(VE) general negative-weight shortest path to O(E^(3-epsilon)).",
+      "detail": "No known sub-linear static algorithm exists for undirected reachability, and one would imply a breakthrough on dense triangle detection."
+    }
+  }
+}

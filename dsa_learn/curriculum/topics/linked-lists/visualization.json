@@ -1,0 +1,177 @@
+{
+  "operations": [
+    {
+      "id": "insert_head",
+      "name": "Linked List — Insert at Head",
+      "description": "Relinks one node ahead of the head pointer.",
+      "data_structure_type": "LINKED_LIST",
+      "parameters": [
+        {
+          "name": "value",
+          "label": "New Value",
+          "type": "number",
+          "default_value": 5,
+          "min": -999,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Standard List",
+          "description": "Three-node list.",
+          "input": {
+            "kind": "list",
+            "values": [
+              10,
+              20,
+              30
+            ]
+          },
+          "params": {
+            "value": 5
+          }
+        },
+        {
+          "name": "Empty List",
+          "description": "Boundary: head is null.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "value": 42
+          }
+        },
+        {
+          "name": "Single Node",
+          "description": "Boundary: one existing node.",
+          "input": {
+            "kind": "list",
+            "values": [
+              99
+            ]
+          },
+          "params": {
+            "value": 1
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: repeated values make node identity indistinguishable by value.",
+          "input": {
+            "kind": "list",
+            "values": [
+              7,
+              7,
+              7
+            ]
+          },
+          "params": {
+            "value": 7
+          }
+        },
+        {
+          "name": "Two Nodes",
+          "description": "Boundary: minimal non-empty list.",
+          "input": {
+            "kind": "list",
+            "values": [
+              10,
+              20
+            ]
+          },
+          "params": {
+            "value": 5
+          }
+        },
+        {
+          "name": "Already Ordered",
+          "description": "Boundary: ascending input, inserted value extends the range.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "params": {
+            "value": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "reverse_list",
+      "name": "Linked List — Reverse In Place",
+      "description": "Three-pointer walk that inverts each link without allocating a node.",
+      "data_structure_type": "LINKED_LIST",
+      "parameters": [],
+      "presets": [
+        {
+          "name": "Linear 5-Node List",
+          "description": "Odd-length list.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Two Nodes",
+          "description": "Boundary: minimal reversal.",
+          "input": {
+            "kind": "list",
+            "values": [
+              10,
+              20
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Single Node",
+          "description": "Boundary: reversal is a no-op.",
+          "input": {
+            "kind": "list",
+            "values": [
+              42
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Empty List",
+          "description": "Boundary: nothing to reverse.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {}
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: pointer identity by value.",
+          "input": {
+            "kind": "list",
+            "values": [
+              8,
+              8,
+              8,
+              8
+            ]
+          },
+          "params": {}
+        }
+      ]
+    }
+  ]
+}

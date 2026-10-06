@@ -1,0 +1,257 @@
+{
+  "operations": [
+    {
+      "id": "monotonic_stack",
+      "name": "Monotonic Stack",
+      "description": "Pops every dominated element on each push, so total work stays linear.",
+      "data_structure_type": "STACK",
+      "parameters": [],
+      "presets": [
+        {
+          "name": "Random Values",
+          "description": "Typical mixed input.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              2,
+              6,
+              3,
+              1
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Empty Input",
+          "description": "Boundary: nothing to push.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {}
+        },
+        {
+          "name": "Single Element",
+          "description": "Boundary: one push, no pops.",
+          "input": {
+            "kind": "list",
+            "values": [
+              7
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Already Sorted",
+          "description": "Boundary: ascending input, no element is dominated.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Reverse Sorted",
+          "description": "Boundary: every push pops the entire stack.",
+          "input": {
+            "kind": "list",
+            "values": [
+              9,
+              7,
+              5,
+              3,
+              1
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: equal values are not dominated by each other.",
+          "input": {
+            "kind": "list",
+            "values": [
+              4,
+              4,
+              4,
+              4
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Long Increasing Run",
+          "description": "Boundary: a single pop closes the whole search space.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Exhausted Pass",
+          "description": "Boundary: full pass ends with one survivor, the maximum.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              1,
+              4,
+              1,
+              5,
+              9,
+              2,
+              6
+            ]
+          },
+          "params": {}
+        }
+      ]
+    },
+    {
+      "id": "fifo_queue",
+      "name": "FIFO Queue",
+      "description": "Enqueue at the rear, dequeue from the front, and watch the two ends diverge.",
+      "data_structure_type": "QUEUE",
+      "parameters": [
+        {
+          "name": "operation",
+          "label": "Operation",
+          "type": "string",
+          "default_value": "dequeue"
+        }
+      ],
+      "presets": [
+        {
+          "name": "Enqueue Only",
+          "description": "Fills the queue to show arrival order.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "params": {
+            "operation": "enqueue"
+          }
+        },
+        {
+          "name": "Enqueue Then Dequeue",
+          "description": "Shows departure order matching arrival order.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "params": {
+            "operation": "dequeue"
+          }
+        },
+        {
+          "name": "Empty Queue",
+          "description": "Boundary: front and rear both undefined.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "operation": "dequeue"
+          }
+        },
+        {
+          "name": "Single Element",
+          "description": "Boundary: front and rear are the same slot.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5
+            ]
+          },
+          "params": {
+            "operation": "dequeue"
+          }
+        },
+        {
+          "name": "Two Elements",
+          "description": "Boundary: minimal non-empty drain.",
+          "input": {
+            "kind": "list",
+            "values": [
+              8,
+              9
+            ]
+          },
+          "params": {
+            "operation": "dequeue"
+          }
+        },
+        {
+          "name": "Already Sorted",
+          "description": "Boundary: ascending input.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3
+            ]
+          },
+          "params": {
+            "operation": "dequeue"
+          }
+        },
+        {
+          "name": "Fully Drained",
+          "description": "Boundary: the last element leaves and the queue is empty again.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1
+            ]
+          },
+          "params": {
+            "operation": "dequeue"
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: identical values, order still observable by position.",
+          "input": {
+            "kind": "list",
+            "values": [
+              6,
+              6,
+              6
+            ]
+          },
+          "params": {
+            "operation": "dequeue"
+          }
+        }
+      ]
+    }
+  ]
+}

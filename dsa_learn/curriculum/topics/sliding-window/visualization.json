@@ -1,0 +1,120 @@
+{
+  "operations": [
+    {
+      "id": "longest_unique_window",
+      "name": "Longest Subarray Without Repeats",
+      "description": "Expands right, contracts left, and states the window invariant each step.",
+      "data_structure_type": "ARRAY",
+      "parameters": [],
+      "presets": [
+        {
+          "name": "Standard Text",
+          "description": "Mixed characters with repeats.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "a",
+              "b",
+              "c",
+              "a",
+              "d",
+              "b"
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "All Unique",
+          "description": "Boundary: no contraction ever needed.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: contraction on nearly every step.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "a",
+              "a",
+              "a",
+              "a"
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Empty Input",
+          "description": "Boundary: no right edge to advance.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {}
+        },
+        {
+          "name": "Single Character",
+          "description": "Boundary: one step, no duplicate possible.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "x"
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Two Characters",
+          "description": "Boundary: minimal repeat test.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "a",
+              "a"
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Already Ordered",
+          "description": "Boundary: strictly increasing window throughout.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e"
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Exhausted Sweep",
+          "description": "Boundary: sweep reaches the last index and the window is reused from scratch twice.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "a",
+              "b",
+              "c",
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "params": {}
+        }
+      ]
+    }
+  ]
+}

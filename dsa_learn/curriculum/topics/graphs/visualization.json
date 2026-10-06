@@ -1,0 +1,285 @@
+{
+  "operations": [
+    {
+      "id": "bfs_traversal",
+      "name": "Breadth-First Search",
+      "description": "Expands the frontier level by level from a source, proving reachability.",
+      "data_structure_type": "GRAPH",
+      "parameters": [
+        {
+          "name": "source",
+          "label": "Source",
+          "type": "string",
+          "default_value": "A"
+        }
+      ],
+      "presets": [
+        {
+          "name": "Standard Graph",
+          "description": "6 vertices, 7 edges, fully reachable.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "A",
+                "C"
+              ],
+              [
+                "B",
+                "D"
+              ],
+              [
+                "C",
+                "E"
+              ],
+              [
+                "E",
+                "F"
+              ],
+              [
+                "B",
+                "F"
+              ]
+            ]
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Single Vertex",
+          "description": "Boundary: one vertex, no edges.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A"
+            ],
+            "edges": []
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Disconnected Component",
+          "description": "Boundary: a vertex unreachable from the source.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "C",
+                "D"
+              ]
+            ]
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Fully Connected",
+          "description": "Boundary: every vertex adjacent to the source.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B",
+              "C"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "A",
+                "C"
+              ]
+            ]
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Cycle",
+          "description": "Boundary: a cycle, so the visited set is the only thing preventing a loop.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B",
+              "C"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "B",
+                "C"
+              ],
+              [
+                "C",
+                "A"
+              ]
+            ]
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Weighted Edges",
+          "description": "Boundary: weights present but BFS ignores them (that is Dijkstra).",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B",
+              "C"
+            ],
+            "edges": [
+              [
+                "A",
+                "B",
+                5
+              ],
+              [
+                "B",
+                "C",
+                2
+              ],
+              [
+                "A",
+                "C",
+                9
+              ]
+            ]
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Linear Chain",
+          "description": "Boundary: a path, so each vertex has exactly one neighbour to expand.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "B",
+                "C"
+              ],
+              [
+                "C",
+                "D"
+              ]
+            ]
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Empty Graph",
+          "description": "Boundary: no vertices, so the frontier is empty from the start.",
+          "input": {
+            "kind": "graph",
+            "nodes": [],
+            "edges": []
+          },
+          "params": {
+            "source": "A"
+          }
+        },
+        {
+          "name": "Source Absent",
+          "description": "Boundary: the named source is not in the graph, so the search must fall back.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ]
+            ]
+          },
+          "params": {
+            "source": "Z"
+          }
+        },
+        {
+          "name": "Duplicate Edges",
+          "description": "Boundary: parallel edges between the same pair, which the visited set must tolerate.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "A",
+              "B",
+              "C"
+            ],
+            "edges": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "A",
+                "B"
+              ],
+              [
+                "B",
+                "C"
+              ],
+              [
+                "B",
+                "C"
+              ]
+            ]
+          },
+          "params": {
+            "source": "A"
+          }
+        }
+      ]
+    }
+  ]
+}

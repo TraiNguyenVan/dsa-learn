@@ -1,0 +1,268 @@
+{
+  "operations": [
+    {
+      "id": "union_find",
+      "name": "Disjoint-Set Union",
+      "description": "Union by rank decides the survivor; path compression flattens the chains.",
+      "data_structure_type": "GRAPH",
+      "parameters": [],
+      "presets": [
+        {
+          "name": "Chain Build",
+          "description": "Six unions forming one component.",
+          "input": {
+            "kind": "list",
+            "values": [
+              0,
+              1,
+              1,
+              2,
+              2,
+              3
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Disconnected Sets",
+          "description": "Boundary: two components never joined.",
+          "input": {
+            "kind": "list",
+            "values": [
+              0,
+              1,
+              3,
+              4
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Redundant Union",
+          "description": "Boundary: an edge whose endpoints are already connected.",
+          "input": {
+            "kind": "list",
+            "values": [
+              0,
+              1,
+              1,
+              2,
+              0,
+              2
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Self Union",
+          "description": "Boundary: an element unioned with itself.",
+          "input": {
+            "kind": "list",
+            "values": [
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Single Pair",
+          "description": "Boundary: one union, minimal non-trivial case.",
+          "input": {
+            "kind": "list",
+            "values": [
+              0,
+              1
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Empty Sequence",
+          "description": "Boundary: an empty operation list, so every element stays its own root.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {}
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: the same pair repeated, so all but the first are pruned.",
+          "input": {
+            "kind": "list",
+            "values": [
+              2,
+              3,
+              2,
+              3,
+              2,
+              3
+            ]
+          },
+          "params": {}
+        }
+      ]
+    },
+    {
+      "id": "segment_tree_query",
+      "name": "Segment Tree Range Query",
+      "description": "Descends only into partially covered nodes and merges the rest whole.",
+      "data_structure_type": "GRAPH",
+      "parameters": [
+        {
+          "name": "lo",
+          "label": "Query Low",
+          "type": "number",
+          "default_value": 1,
+          "min": 0,
+          "max": 999
+        },
+        {
+          "name": "hi",
+          "label": "Query High",
+          "type": "number",
+          "default_value": 6,
+          "min": 0,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Full Range",
+          "description": "The whole array, answered by the root.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              1,
+              4,
+              1,
+              5,
+              9,
+              2,
+              6
+            ]
+          },
+          "params": {
+            "lo": 0,
+            "hi": 7
+          }
+        },
+        {
+          "name": "Interior Range",
+          "description": "Fully covered by two canonical nodes.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              1,
+              4,
+              1,
+              5,
+              9,
+              2,
+              6
+            ]
+          },
+          "params": {
+            "lo": 2,
+            "hi": 5
+          }
+        },
+        {
+          "name": "Single Element",
+          "description": "Boundary: a range of length 1.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              1,
+              4,
+              1,
+              5,
+              9,
+              2,
+              6
+            ]
+          },
+          "params": {
+            "lo": 4,
+            "hi": 4
+          }
+        },
+        {
+          "name": "Exhausted Empty Range",
+          "description": "Boundary: low exceeds high, so the query has no canonical nodes and folds nothing.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              1,
+              4,
+              1,
+              5,
+              9,
+              2,
+              6
+            ]
+          },
+          "params": {
+            "lo": 5,
+            "hi": 2
+          }
+        },
+        {
+          "name": "Empty Array",
+          "description": "Boundary: no elements at all.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "lo": 0,
+            "hi": 0
+          }
+        },
+        {
+          "name": "Already Ordered",
+          "description": "Boundary: ascending input.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          "params": {
+            "lo": 1,
+            "hi": 4
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: equal values, so minima tie everywhere.",
+          "input": {
+            "kind": "list",
+            "values": [
+              7,
+              7,
+              7,
+              7
+            ]
+          },
+          "params": {
+            "lo": 1,
+            "hi": 2
+          }
+        }
+      ]
+    }
+  ]
+}

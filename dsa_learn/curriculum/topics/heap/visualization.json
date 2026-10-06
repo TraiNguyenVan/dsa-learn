@@ -1,0 +1,93 @@
+{
+  "operations": [
+    {
+      "id": "heap_insert",
+      "name": "Min-Heap — Insert (Bubble-Up)",
+      "description": "Appends at the next free slot, then sifts up until the min-heap invariant holds.",
+      "data_structure_type": "HEAP",
+      "parameters": [
+        {
+          "name": "value",
+          "label": "New Value",
+          "type": "number",
+          "default_value": 5,
+          "min": -999,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Insert Smaller",
+          "description": "Value swaps all the way to the root.",
+          "input": {
+            "kind": "list",
+            "values": [
+              10,
+              20,
+              15,
+              30,
+              40
+            ]
+          },
+          "params": {
+            "value": 5
+          }
+        },
+        {
+          "name": "Insert Larger",
+          "description": "Value stops immediately, no swap.",
+          "input": {
+            "kind": "list",
+            "values": [
+              10,
+              20,
+              15
+            ]
+          },
+          "params": {
+            "value": 50
+          }
+        },
+        {
+          "name": "Empty Heap",
+          "description": "Boundary: value becomes the root.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "value": 42
+          }
+        },
+        {
+          "name": "Single Node",
+          "description": "Boundary: no parent to compare against.",
+          "input": {
+            "kind": "list",
+            "values": [
+              7
+            ]
+          },
+          "params": {
+            "value": 3
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: equal values need no swap.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              5,
+              5
+            ]
+          },
+          "params": {
+            "value": 5
+          }
+        }
+      ]
+    }
+  ]
+}

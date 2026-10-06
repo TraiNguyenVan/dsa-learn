@@ -1,0 +1,120 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Probe a[mid] on contiguous storage",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One address computation, base + mid * sizeof(element). No pointer chase."
+    },
+    {
+      "operation": "Successful search (target present)",
+      "best_time": "O(1)",
+      "average_time": "O(log N)",
+      "worst_time": "O(log N)",
+      "space_complexity": "O(1)",
+      "notes": "ceil(log2(N+1)) comparisons worst case; O(1) when the target sits at the first midpoint. Derivation: cost-derivations#halving.",
+      "derivation_ref": "cost-derivations#halving"
+    },
+    {
+      "operation": "Unsuccessful search (target absent)",
+      "best_time": "O(log N)",
+      "average_time": "O(log N)",
+      "worst_time": "O(log N)",
+      "space_complexity": "O(1)",
+      "notes": "Best case is logarithmic, not constant: absence is only concluded once the window empties, which takes at least log2(N+1) halvings.",
+      "derivation_ref": "cost-derivations#halving"
+    },
+    {
+      "operation": "One iteration of the loop",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One element comparison plus at most two integer comparisons to select a branch; window shrinks by at most half."
+    },
+    {
+      "operation": "Window shrink per iteration",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "W(t+1) = ceil(W(t)/2), so the retained window is at most half the previous one. This is the whole source of the logarithmic bound.",
+      "derivation_ref": "cost-derivations#halving"
+    },
+    {
+      "operation": "lower_bound / upper_bound descent",
+      "best_time": "O(log N)",
+      "average_time": "O(log N)",
+      "worst_time": "O(log N)",
+      "space_complexity": "O(1)",
+      "notes": "First index at or after a value. Answers 'count of elements below x' and 'insert position' without a separate scan.",
+      "derivation_ref": "cost-derivations#comparisons"
+    },
+    {
+      "operation": "Binary search over linked-list storage",
+      "best_time": "O(N)",
+      "average_time": "O(N log N)",
+      "worst_time": "O(N log N)",
+      "space_complexity": "O(1)",
+      "notes": "Halving still log N iterations, but each midpoint costs a walk from the head. Strictly worse than a linear scan — the power comes from O(1) random access.",
+      "derivation_ref": "cost-derivations#halving"
+    },
+    {
+      "operation": "Batch of n queries over one sorted array",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(n log N)",
+      "space_complexity": "O(1)",
+      "notes": "Random targets average a constant number of probes; the n log N figure is the adversarial worst case.",
+      "derivation_ref": "cost-derivations#why-the-best-case-is-not-amortised-away"
+    },
+    {
+      "operation": "Leftmost-duplicate descent",
+      "best_time": "O(log N)",
+      "average_time": "O(log N)",
+      "worst_time": "O(log N)",
+      "space_complexity": "O(1)",
+      "notes": "Record the hit, then re-search [lo, mid) for the same value. Second logarithmic pass.",
+      "derivation_ref": "cost-derivations#comparisons"
+    },
+    {
+      "operation": "Enumerate all k matches",
+      "best_time": "O(log N + k)",
+      "average_time": "O(log N + k)",
+      "worst_time": "O(log N + k)",
+      "space_complexity": "O(1)",
+      "notes": "Two boundary descions bracket the run, then k steps walk it. The +k is unavoidable output cost.",
+      "derivation_ref": "cost-derivations#linear-scan-comparison"
+    },
+    {
+      "operation": "Pre-sort once, then query repeatedly",
+      "best_time": "O(N log N)",
+      "average_time": "O(N log N)",
+      "worst_time": "O(N log N)",
+      "space_complexity": "O(N)",
+      "notes": "Sort cost dominates when the queried fraction of elements exceeds roughly log N out of every N.",
+      "derivation_ref": "cost-derivations#linear-scan-comparison"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Each branch discards only indices provably unable to hold the target, so the window invariant is preserved and emptiness at exit proves absence rather than merely failing to observe it."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "W(t+1) = ceil(W(t)/2) gives W(k) = ceil(N / 2^k); the loop ends at the smallest k with 2^k > N, i.e. exactly ceil(log2(N+1)) comparisons."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "In the comparison decision-tree model a correct search needs N leaves in a tree of depth k with at most 2^k leaves, forcing k >= ceil(log2 N); binary search attains it, so no comparison-based search does better. No deterministic worst-case O(1) hash lookup is known in general."
+    }
+  },
+  "supporting_structure": {
+    "name": "Monotone Sorted Sequence with O(1) Random Access",
+    "native_to_technique": true,
+    "rationale": "The technique's entire advantage is the combination of sorted order with constant-time indexing. Sortedness supplies the discard rule (one comparison eliminates a half) and contiguous storage supplies the O(1) probe; remove either and the bound collapses to O(N log N) or to a prerequisite sort. This structure is not an auxiliary choice, it is the precondition the correctness argument depends on."
+  }
+}

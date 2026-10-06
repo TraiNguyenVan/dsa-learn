@@ -1,0 +1,136 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "BFS or DFS traversal, adjacency list",
+      "best_time": "O(V)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "Each vertex enqueued once, each edge examined once. Tight against the traversal lower bound.",
+      "derivation_ref": "cost-derivations#traversal"
+    },
+    {
+      "operation": "Topological sort (Kahn)",
+      "best_time": "O(V)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "Same traversal bound. Reports failure when no zero-in-degree vertex remains, which is the cycle certificate.",
+      "derivation_ref": "cost-derivations#traversal"
+    },
+    {
+      "operation": "Topological sort on a cyclic graph",
+      "best_time": "O(V)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "Terminates with the no-order result rather than looping, because the in-degree argument proves a cycle exists.",
+      "derivation_ref": "cost-derivations#traversal"
+    },
+    {
+      "operation": "Dijkstra with a binary heap, non-negative weights",
+      "best_time": "O(V)",
+      "average_time": "O((V+E) log V)",
+      "worst_time": "O((V+E) log V)",
+      "space_complexity": "O(V+E)",
+      "notes": "V extractions at O(log V) plus E relaxations at O(log V). Requires non-negative weights; unsound otherwise.",
+      "derivation_ref": "cost-derivations#dijkstra with"
+    },
+    {
+      "operation": "Dijkstra with an array priority queue (dense graphs)",
+      "best_time": "O(V)",
+      "average_time": "O(V^2)",
+      "worst_time": "O(V^2)",
+      "space_complexity": "O(V)",
+      "notes": "Linear scan to select the minimum. Wins when E is a constant fraction of V^2, loses badly when sparse.",
+      "derivation_ref": "cost-derivations#dijkstra with"
+    },
+    {
+      "operation": "Dijkstra on a graph containing a negative edge",
+      "best_time": "O(V)",
+      "average_time": "O((V+E) log V)",
+      "worst_time": "O((V+E) log V)",
+      "space_complexity": "O(V+E)",
+      "notes": "Returns a wrong answer, not merely a slow one. The invariant that an extracted distance is final fails outright.",
+      "derivation_ref": "cost-derivations#bellman"
+    },
+    {
+      "operation": "Bellman-Ford, arbitrary weights",
+      "best_time": "O(VE)",
+      "average_time": "O(VE)",
+      "worst_time": "O(VE)",
+      "space_complexity": "O(V)",
+      "notes": "V-1 passes over all E edges. The extra factor over Dijkstra is the price of tolerating negative weights.",
+      "derivation_ref": "cost-derivations#bellman"
+    },
+    {
+      "operation": "Negative-cycle detection",
+      "best_time": "O(VE)",
+      "average_time": "O(VE)",
+      "worst_time": "O(VE)",
+      "space_complexity": "O(V)",
+      "notes": "A V-th pass that still improves a distance proves a negative cycle, and the shortest-path problem is undefined rather than hard.",
+      "derivation_ref": "cost-derivations#bellman"
+    },
+    {
+      "operation": "Floyd-Warshall all-pairs shortest path",
+      "best_time": "O(V)",
+      "average_time": "O(V^3)",
+      "worst_time": "O(V^3)",
+      "space_complexity": "O(V^2)",
+      "notes": "Best known unconditional all-pairs bound. O(V) per source.",
+      "derivation_ref": "cost-derivations#floyd"
+    },
+    {
+      "operation": "Union-find merge with path compression and union by rank",
+      "best_time": "O(1)",
+      "average_time": "O(alpha(n))",
+      "worst_time": "O(log n)",
+      "space_complexity": "Theta(n)",
+      "notes": "Effectively constant amortised; alpha(n) is below 5 for any n that fits in memory. Using only one optimisation loses the bound.",
+      "derivation_ref": "cost-derivations#union"
+    },
+    {
+      "operation": "Kruskal minimum spanning tree",
+      "best_time": "O(E log E)",
+      "average_time": "O(E log E)",
+      "worst_time": "O(E log E)",
+      "space_complexity": "O(V + E)",
+      "notes": "Sort the edges, then V-1 union-find queries. Suits sparse graphs and edge-list input.",
+      "derivation_ref": "cost-derivations#union"
+    },
+    {
+      "operation": "Prim minimum spanning tree",
+      "best_time": "O(V)",
+      "average_time": "O((V+E) log V)",
+      "worst_time": "O(V^2)",
+      "space_complexity": "O(V)",
+      "notes": "Maintains a key per vertex and extracts the minimum. Suits dense adjacency-matrix graphs.",
+      "derivation_ref": "cost-derivations#dijkstra with"
+    },
+    {
+      "operation": "BFS distance used where weighted distance is required",
+      "best_time": "O(V)",
+      "average_time": "O(V+E)",
+      "worst_time": "O(V+E)",
+      "space_complexity": "O(V)",
+      "notes": "Returns the fewest-hops path, not the cheapest one. Correct only when all weights are equal.",
+      "derivation_ref": "cost-derivations#traversal"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Topological sort is correct because a vertex is emitted only at in-degree zero, so every predecessor precedes it, and it detects a cycle exactly when no zero-in-degree vertex remains. Dijkstra is correct because a cheaper path would pass through a not-yet-extracted vertex with a smaller tentative distance, contradicting the extraction order; that argument needs non-negative weights, and with them failing the algorithm returns wrong values."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Traversal-based algorithms are Theta(V+E) because each vertex is enqueued once and each edge examined once, matching the traversal lower bound. Dijkstra is O((V+E) log V) with a heap and O(V^2) with an array, and Bellman-Ford is Theta(VE) because V-1 passes suffice for paths visiting at most V vertices.",
+      "detail": "Union-find reaches O(alpha(n)) amortised only when both path compression and union by rank are used."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "Conditionally on the negative-weight triangle hypothesis, no combinatorial algorithm improves O(VE) negative-weight shortest path below O(E^(3-epsilon)), and Floyd-Warshall's O(V^3) is the best known unconditional all-pairs bound. Negative cycles make the problem undefined rather than merely hard. Directed reachability has no O(V+E) sequential algorithm, so a symmetric algorithm for the directed case is a real limitation rather than a shortcut."
+    }
+  }
+}

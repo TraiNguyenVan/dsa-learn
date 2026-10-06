@@ -3,14 +3,35 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 export interface UsePlaybackProps {
   totalSteps: number;
   initialSpeed?: number;
+  /**
+   * spec 006 / FR-017: resume position. A stored position at or beyond the
+   * current frame count means the generator changed how many frames it emits,
+   * so the stored index is meaningless and playback restarts from 0 rather than
+   * resuming out of range (contract PB-04).
+   */
+  initialStep?: number;
   onStepChange?: (step: number) => void;
 }
 
-export function usePlayback({ totalSteps, initialSpeed = 1.0, onStepChange }: UsePlaybackProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+export function usePlayback({
+  totalSteps,
+  initialSpeed = 1.0,
+  initialStep = 0,
+  onStepChange,
+}: UsePlaybackProps) {
+  const [currentStep, setCurrentStep] = useState(() =>
+    initialStep > 0 && initialStep < totalSteps ? initialStep : 0,
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(initialSpeed);
   const timerRef = useRef<number | null>(null);
+
+  // When the frame count changes underneath us (a different operation, or a
+  // regenerated trace), keep the cursor inside the new range instead of leaving
+  // it pointing past the last frame.
+  useEffect(() => {
+    setCurrentStep((prev) => (prev > totalSteps - 1 ? Math.max(0, totalSteps - 1) : prev));
+  }, [totalSteps]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {

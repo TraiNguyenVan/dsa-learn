@@ -1,0 +1,144 @@
+{
+  "operations": [
+    {
+      "id": "trie_insert_search",
+      "name": "Trie Insert and Prefix Search",
+      "description": "Same walk, two purposes: membership decides by the terminal flag.",
+      "data_structure_type": "TRIE",
+      "parameters": [
+        {
+          "name": "query",
+          "label": "Query",
+          "type": "string",
+          "default_value": "cat"
+        },
+        {
+          "name": "mode",
+          "label": "Mode",
+          "type": "string",
+          "default_value": "search"
+        }
+      ],
+      "presets": [
+        {
+          "name": "Exact Key",
+          "description": "Walk succeeds and the terminal flag is set.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "cat",
+              "car",
+              "cart"
+            ]
+          },
+          "params": {
+            "query": "cat",
+            "mode": "search"
+          }
+        },
+        {
+          "name": "Valid Prefix Only",
+          "description": "Walk succeeds but the flag is unset: a prefix, not a key.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "cart",
+              "carbon"
+            ]
+          },
+          "params": {
+            "query": "car",
+            "mode": "search"
+          }
+        },
+        {
+          "name": "Missing Prefix",
+          "description": "Walk fails mid-string: no key starts this way.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "cat",
+              "car"
+            ]
+          },
+          "params": {
+            "query": "dog",
+            "mode": "search"
+          }
+        },
+        {
+          "name": "Empty Query",
+          "description": "Boundary: the empty string is a prefix of every key.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "cat"
+            ]
+          },
+          "params": {
+            "query": "",
+            "mode": "search"
+          }
+        },
+        {
+          "name": "Empty Trie",
+          "description": "Boundary: nothing stored yet.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "query": "cat",
+            "mode": "search"
+          }
+        },
+        {
+          "name": "Single Character",
+          "description": "Boundary: one-character key.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "a"
+            ]
+          },
+          "params": {
+            "query": "a",
+            "mode": "search"
+          }
+        },
+        {
+          "name": "Insert Shared Prefixes",
+          "description": "Builds a trie to show prefix sharing.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "cat",
+              "car",
+              "card"
+            ]
+          },
+          "params": {
+            "query": "ca",
+            "mode": "insert"
+          }
+        },
+        {
+          "name": "All Duplicate Keys",
+          "description": "Boundary: the same key inserted twice, which is idempotent.",
+          "input": {
+            "kind": "list",
+            "values": [
+              "cat",
+              "cat",
+              "cat"
+            ]
+          },
+          "params": {
+            "query": "cat",
+            "mode": "insert"
+          }
+        }
+      ]
+    }
+  ]
+}

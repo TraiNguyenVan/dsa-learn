@@ -1,36 +1,112 @@
 {
   "complexity_matrix": [
     {
-      "operation": "Two Sum (Sorted Input)",
+      "operation": "Single pointer move (convergence variant)",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One index read, one add, one comparison, one pointer increment or decrement. No allocation at any point."
+    },
+    {
+      "operation": "Convergent two-pointer scan (right - left strictly decreasing)",
       "best_time": "O(1)",
       "average_time": "O(N)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Opposite-end convergence eliminates O(N^2) search space."
+      "claim": "The gap starts at N-1 and decreases every iteration, so the body runs at most N times.",
+      "derivation_ref": "cost-derivations#convergence"
     },
     {
-      "operation": "In-Place Reverse / Palindrome Check",
-      "best_time": "O(1)",
-      "average_time": "O(N)",
-      "worst_time": "O(N)",
-      "space_complexity": "O(1)",
-      "notes": "Compares and swaps elements moving inward; terminates at N/2 steps."
-    },
-    {
-      "operation": "Fast & Slow Cycle Detection (Floyd)",
-      "best_time": "O(1)",
-      "average_time": "O(N)",
-      "worst_time": "O(N)",
-      "space_complexity": "O(1)",
-      "notes": "Constant space cycle verification without hash set memory overhead."
-    },
-    {
-      "operation": "In-Place Deduplication / Compaction",
+      "operation": "Eliminate one row and column of the pair matrix per comparison",
       "best_time": "O(N)",
       "average_time": "O(N)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Slow pointer tracks write position while fast pointer scans."
+      "notes": "This is the factor-N saving over brute force: brute force examines N choose 2 pairs, convergence examines N sums.",
+      "derivation_ref": "cost-derivations#convergence"
+    },
+    {
+      "operation": "Pre-sort an unsorted array to enable convergence",
+      "best_time": "O(N log N)",
+      "average_time": "O(N log N)",
+      "worst_time": "O(N log N)",
+      "space_complexity": "O(N)",
+      "notes": "Dominates the O(N) scan whenever the input arrives unsorted, so the end-to-end cost is Theta(N log N) and the technique is not the bottleneck.",
+      "derivation_ref": "cost-derivations#precondition"
+    },
+    {
+      "operation": "Sort index-value pairs to preserve original positions",
+      "best_time": "O(N log N)",
+      "average_time": "O(N log N)",
+      "worst_time": "O(N log N)",
+      "space_complexity": "O(N)",
+      "notes": "Carries each original index alongside its value so the technique survives when the problem returns positions rather than values.",
+      "derivation_ref": "cost-derivations#precondition"
+    },
+    {
+      "operation": "In-place partition (Dutch National Flag)",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Three pointers partition into less-than, equal-to and greater-than regions; the boundary never moves backwards, so each element is placed once.",
+      "derivation_ref": "cost-derivations#slow"
+    },
+    {
+      "operation": "Floyd cycle detection (slow +1, fast +2)",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Bounded by tail length plus cycle length, both at most N. Constant space where a hash set of seen nodes would cost O(N).",
+      "derivation_ref": "cost-derivations#slow"
+    },
+    {
+      "operation": "Full window sweep (both ends advance, neither retreats)",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(window size)",
+      "notes": "Each pointer travels at most N positions over the entire sweep, so total movement is O(2N) amortised even though one recomputation may cost O(window size).",
+      "derivation_ref": "cost-derivations#variants"
+    },
+    {
+      "operation": "Window re-evaluation cost per step",
+      "best_time": "O(1)",
+      "average_time": "O(W)",
+      "worst_time": "O(W)",
+      "space_complexity": "O(W)",
+      "notes": "W is the window width. Linear only when the aggregate is incrementally updatable, which is the precondition for the whole pattern.",
+      "derivation_ref": "cost-derivations#variants"
+    },
+    {
+      "operation": "Total auxiliary space across every two-pointer variant",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "The pattern allocates nothing, which is its main practical advantage over hashing a window into a frequency map.",
+      "derivation_ref": "cost-derivations#slow"
     }
-  ]
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Each pointer move discards an index only by a monotonicity argument: when the sum is too small every remaining pair reusing the left index is also too small. Discarding is proved sound, so the loop exit with left >= right proves no solution exists rather than merely failing to find one."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "The gap right - left strictly decreases each iteration from N-1, bounding the loop at N O(1) iterations; a full window sweep totals O(2N) pointer movement amortised across the whole scan."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "Omega(N) is a lower bound for pair search on sorted input in the comparison model, and two pointers attains it. Without monotonicity no valid move exists, so the technique does not apply rather than merely running slower."
+    }
+  },
+  "supporting_structure": {
+    "name": "Monotone Sequence with Order-Preserving Discard",
+    "native_to_technique": true,
+    "rationale": "Sorted or otherwise monotone input is not a convenience here but the correctness precondition. Every pointer move is justified by 'any other candidate with this value is also ruled out', which is exactly monotonicity. The second half is that the discard must be order-preserving: when a problem returns original indices, the fix is to sort index-value pairs and carry positions, not to abandon the technique. This structure is what the technique consumes, not an auxiliary container added to make it work."
+  }
 }

@@ -55,6 +55,12 @@ def get_exercises_handler() -> tuple[int, dict[str, Any]]:
                 "slug": ex["slug"],
                 "title": ex["title"],
                 "difficulty": ex["difficulty"],
+                # The sidebar renders a FoundationBadge from this flag, so it has
+                # to be on the wire -- the catalog alone does not reach the client.
+                "is_foundation": bool(ex.get("is_foundation", False)),
+                # Defaults to "problem" per contract rule E-01, so every one of
+                # the original 52 exercises is reported unchanged.
+                "kind": ex.get("kind", "problem"),
                 "time_complexity_target": ex.get("time_complexity_target", "O(N)"),
                 "space_complexity_target": ex.get("space_complexity_target", "O(1)"),
                 "status": prog.get("status", "NOT_ATTEMPTED"),
@@ -93,6 +99,11 @@ def get_exercise_detail_handler(exercise_id: str) -> tuple[int, dict[str, Any]]:
         "slug": ex["slug"],
         "title": ex["title"],
         "difficulty": ex["difficulty"],
+        # Declared in the catalog and consumed by ProblemViewer's FoundationBadge;
+        # without it on the wire the badge silently never renders.
+        "is_foundation": bool(ex.get("is_foundation", False)),
+        "kind": ex.get("kind", "problem"),
+        "components": list(ex.get("components", []) or []),
         "time_complexity_target": ex.get("time_complexity_target", "O(N)"),
         "space_complexity_target": ex.get("space_complexity_target", "O(1)"),
         "timeout_ms": ex.get("timeout_ms", 2000),
@@ -322,6 +333,72 @@ def post_visualizer_progress_handler(topic_id: str, body_bytes: bytes) -> tuple[
 
     explored = db.record_visualizer_operation(topic_id, operation_id)
     return 200, {"topic_id": topic_id, "explored_operations": explored}
+
+
+def get_playback_handler(
+    topic_id: str, operation_id: str, query: dict[str, list[str]] | None = None
+) -> tuple[int, dict[str, Any]]:
+    """GET /api/curriculum/topics/{topic_id}/visualizer/playback/{operation_id}
+
+    Returns the stored playback position. An optional `total_steps` lets the
+    client report the frame count it just generated, so a position saved against
+    an older generator revision is reported as 0 rather than out of range
+    (contract H-05 / PB-04).
+    """
+    current_total: int | None = None
+    if query:
+        raw = query.get("total_steps", [None])[0]
+        if raw is not None:
+            try:
+                current_total = int(raw)
+            except (TypeError, ValueError):
+                current_total = None
+
+    position = db.get_playback_position(topic_id, operation_id)
+    if current_total is not None and current_total > 0:
+        if position["last_step"] >= current_total or position["total_steps"] != current_total:
+            position["last_step"] = 0
+    return 200, position
+
+
+def post_playback_handler(
+    topic_id: str, operation_id: str, body_bytes: bytes
+) -> tuple[int, dict[str, Any]]:
+    """POST /api/curriculum/topics/{topic_id}/visualizer/playback/{operation_id}
+
+    Persists one playback row. No trace computation happens here (contract H-08).
+    """
+    try:
+        payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+    except Exception:
+        return 400, {"error": "Invalid JSON body"}
+
+    if "last_step" not in payload or "total_steps" not in payload:
+        return 400, {"error": "Missing 'last_step' or 'total_steps'"}
+
+    try:
+        last_step = int(payload["last_step"])
+        total_steps = int(payload["total_steps"])
+    except (TypeError, ValueError):
+        return 400, {"error": "'last_step' and 'total_steps' must be integers"}
+
+    if total_steps < 0:
+        return 400, {"error": "'total_steps' must not be negative"}
+
+    position = db.save_playback_position(topic_id, operation_id, last_step, total_steps)
+    return 200, position
+
+
+def get_coverage_handler() -> tuple[int, dict[str, Any]]:
+    """GET /api/curriculum/coverage - Derived coverage report (research R-012).
+
+    Every field is computed from material actually present rather than stored,
+    so the reference guide can be regenerated from this response instead of
+    maintained by hand (FR-040, FR-041).
+    """
+    from dsa_learn.curriculum.loader import get_coverage_status
+
+    return 200, get_coverage_status()
 
 
 def get_patterns_handler(query: dict[str, list[str]]) -> tuple[int, dict[str, Any]]:

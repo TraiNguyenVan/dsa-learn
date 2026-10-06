@@ -11,6 +11,7 @@ from unittest import mock
 
 from dsa_learn.server.debug import bridge, protocol
 from dsa_learn.server.debug.session import SessionError
+from dsa_learn.server.websocket import OP_CLOSE, OP_TEXT
 
 
 class FakeWebSocket:
@@ -30,10 +31,15 @@ class FakeWebSocket:
         self.closed_with = (code, reason)
 
     def recv(self):
+        # Mirrors WebSocketConnection.recv(): (opcode, payload) with a bytes
+        # payload, and (OP_CLOSE, None) once the peer has gone.
         if not self._incoming:
             self.is_closed = True
-            return None
-        return self._incoming.pop(0)
+            return OP_CLOSE, None
+        payload = self._incoming.pop(0)
+        if isinstance(payload, str):
+            return OP_TEXT, payload.encode("utf-8")
+        return OP_TEXT, payload
 
     def messages(self) -> list[dict]:
         return [json.loads(m) for m in self.sent]

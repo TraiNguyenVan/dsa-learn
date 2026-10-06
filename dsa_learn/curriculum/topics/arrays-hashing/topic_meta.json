@@ -1,44 +1,108 @@
 {
   "complexity_matrix": [
     {
-      "operation": "Index Access (arr[i])",
+      "operation": "Index access arr[i] on contiguous storage",
       "best_time": "O(1)",
       "average_time": "O(1)",
       "worst_time": "O(1)",
       "space_complexity": "O(1)",
-      "notes": "Direct pointer offset calculation into contiguous memory."
+      "notes": "Address is computed as base + i * sizeof(element): one multiply, one add. No search, no loop.",
+      "derivation_ref": "cost-derivations#contiguous"
     },
     {
-      "operation": "Append / Push Back",
+      "operation": "Append to a dynamic array (push_back)",
       "best_time": "O(1)",
       "average_time": "O(1)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "O(1) amortized. Worst case O(N) when dynamic buffer capacity doubles."
+      "notes": "O(1) amortised by charging each doubling's O(C) copy across the C appends that filled it. Worst case for a single append is the resize itself.",
+      "derivation_ref": "cost-derivations#amortised"
     },
     {
-      "operation": "Middle Insertion / Deletion",
+      "operation": "Trigger the capacity-doubling resize",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(N)",
+      "notes": "Full copy of every existing element, plus allocation of a buffer twice the old capacity. Amortised over the growth sequence this is O(1) per append.",
+      "derivation_ref": "cost-derivations#amortised"
+    },
+    {
+      "operation": "Insert or delete at an arbitrary interior index k",
       "best_time": "O(1)",
       "average_time": "O(N)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Requires shifting all trailing elements left or right."
+      "notes": "Trailing elements must shift to keep the layout gap-free. Best case O(1) is append-like insertion at the final index.",
+      "derivation_ref": "cost-derivations#contiguous"
     },
     {
-      "operation": "Hash Table Lookup (map[key])",
+      "operation": "Hash table lookup (map[key])",
       "best_time": "O(1)",
       "average_time": "O(1)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Worst case O(N) occurs if all keys hash to the identical bucket."
+      "notes": "Expected cost is 1 + alpha, where alpha is the load factor. Worst case is a full collision into one bucket.",
+      "derivation_ref": "cost-derivations#lookup"
     },
     {
-      "operation": "Hash Table Insert / Erase",
+      "operation": "Hash table insert / erase",
       "best_time": "O(1)",
       "average_time": "O(1)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Average constant time; triggers rehashing when load factor is exceeded."
+      "notes": "Same expected 1 + alpha cost; both operations may additionally trigger a rehash of every entry.",
+      "derivation_ref": "cost-derivations#lookup"
+    },
+    {
+      "operation": "Resize the bucket array and rehash all entries",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(N)",
+      "notes": "Every stored key is rehashed into a bucket twice the old count. Amortised across the growth sequence this is O(1) per insert.",
+      "derivation_ref": "cost-derivations#rehash"
+    },
+    {
+      "operation": "Iterate all keys in sorted order",
+      "best_time": "O(N log N)",
+      "average_time": "O(N log N)",
+      "worst_time": "O(N log N)",
+      "space_complexity": "O(N)",
+      "notes": "A hash table destroys key order, so producing sorted output requires an external sort over the whole key set.",
+      "derivation_ref": "cost-derivations#lookup"
+    },
+    {
+      "operation": "Range query over keys in [a, b]",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Keys are scattered across buckets arbitrarily, so there is no contiguity to exploit. This is the cost of choosing hashing.",
+      "derivation_ref": "cost-derivations#lookup"
+    },
+    {
+      "operation": "Total space for N stored entries",
+      "best_time": "Theta(N)",
+      "average_time": "Theta(N)",
+      "worst_time": "Theta(N)",
+      "space_complexity": "Theta(N)",
+      "notes": "Bucket array is Theta(N / alpha) words plus a key, value and chaining pointer per entry. Strictly more than an array of N primitives.",
+      "derivation_ref": "cost-derivations#contiguous"
     }
-  ]
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Lookup is correct because equal keys must hash equal, which places a present key in the searched bucket, and every entry is reachable from its own bucket; a scan that finds nothing therefore proves absence."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Charging each capacity-doubling resize across the appends since the previous one makes append O(1) amortised, while a single append remains O(N) worst case; hash lookup costs 1 + alpha expected, where alpha is the entry-to-bucket ratio."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "No deterministic worst-case O(1) hash lookup is known in general. The Omega(N log N) comparison-sorting barrier does not apply, because hashing computes positions arithmetically rather than by comparing keys."
+    }
+  }
 }

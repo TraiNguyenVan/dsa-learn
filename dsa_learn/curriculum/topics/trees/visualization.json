@@ -1,0 +1,203 @@
+{
+  "operations": [
+    {
+      "id": "bst_search",
+      "name": "Binary Search Tree — Search",
+      "description": "Descends one subtree per comparison, bounded by tree height.",
+      "data_structure_type": "BINARY_SEARCH_TREE",
+      "parameters": [
+        {
+          "name": "target",
+          "label": "Target",
+          "type": "number",
+          "default_value": 40,
+          "min": -999,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Balanced Tree (Found)",
+          "description": "Target found on the left path.",
+          "input": {
+            "kind": "list",
+            "values": [
+              50,
+              30,
+              70,
+              20,
+              40,
+              60,
+              80
+            ]
+          },
+          "params": {
+            "target": 40
+          }
+        },
+        {
+          "name": "Missing Key",
+          "description": "Search exhausts a subtree.",
+          "input": {
+            "kind": "list",
+            "values": [
+              50,
+              30,
+              70,
+              20,
+              40
+            ]
+          },
+          "params": {
+            "target": 99
+          }
+        },
+        {
+          "name": "Skewed Degenerate",
+          "description": "Boundary: unbalanced tree degrades to O(N).",
+          "input": {
+            "kind": "list",
+            "values": [
+              10,
+              20,
+              30,
+              40,
+              50
+            ]
+          },
+          "params": {
+            "target": 50
+          }
+        },
+        {
+          "name": "Empty Tree",
+          "description": "Boundary: no root to descend from.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "target": 5
+          }
+        },
+        {
+          "name": "Single Node",
+          "description": "Boundary: only the root exists.",
+          "input": {
+            "kind": "list",
+            "values": [
+              42
+            ]
+          },
+          "params": {
+            "target": 42
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: repeated keys ignored.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              5,
+              5
+            ]
+          },
+          "params": {
+            "target": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "bst_insert",
+      "name": "Binary Search Tree — Insert",
+      "description": "Follows the search path to a null link, then attaches there.",
+      "data_structure_type": "BINARY_SEARCH_TREE",
+      "parameters": [
+        {
+          "name": "key",
+          "label": "Key",
+          "type": "number",
+          "default_value": 25,
+          "min": -999,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Standard Tree",
+          "description": "Key lands in an interior null link.",
+          "input": {
+            "kind": "list",
+            "values": [
+              30,
+              15,
+              50,
+              10,
+              22
+            ]
+          },
+          "params": {
+            "key": 25
+          }
+        },
+        {
+          "name": "Empty Tree",
+          "description": "Boundary: key becomes the root.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "key": 50
+          }
+        },
+        {
+          "name": "Duplicate Key",
+          "description": "Boundary: duplicate is ignored.",
+          "input": {
+            "kind": "list",
+            "values": [
+              30,
+              15,
+              50
+            ]
+          },
+          "params": {
+            "key": 30
+          }
+        },
+        {
+          "name": "Single Node",
+          "description": "Boundary: one existing node.",
+          "input": {
+            "kind": "list",
+            "values": [
+              10
+            ]
+          },
+          "params": {
+            "key": 20
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: repeated keys collapse.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              5,
+              5
+            ]
+          },
+          "params": {
+            "key": 5
+          }
+        }
+      ]
+    }
+  ]
+}

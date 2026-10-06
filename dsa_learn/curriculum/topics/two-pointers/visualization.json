@@ -1,0 +1,130 @@
+{
+  "operations": [
+    {
+      "id": "two_sum",
+      "name": "Two Pointers (Sorted Two Sum)",
+      "description": "Converges left and right, discarding a whole row or column per comparison.",
+      "data_structure_type": "ARRAY",
+      "parameters": [
+        {
+          "name": "target",
+          "label": "Target",
+          "type": "number",
+          "default_value": 11,
+          "min": -999,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Pair Present",
+          "description": "Sum matches mid-run.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              3,
+              4,
+              7,
+              10,
+              11,
+              15
+            ]
+          },
+          "params": {
+            "target": 11
+          }
+        },
+        {
+          "name": "Pair Missing",
+          "description": "Pointers meet with no solution.",
+          "input": {
+            "kind": "list",
+            "values": [
+              2,
+              4,
+              6,
+              8,
+              10
+            ]
+          },
+          "params": {
+            "target": 15
+          }
+        },
+        {
+          "name": "Two Elements",
+          "description": "Boundary: minimal non-empty window.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              4
+            ]
+          },
+          "params": {
+            "target": 7
+          }
+        },
+        {
+          "name": "Single Element",
+          "description": "Boundary: pointers start already equal.",
+          "input": {
+            "kind": "list",
+            "values": [
+              9
+            ]
+          },
+          "params": {
+            "target": 9
+          }
+        },
+        {
+          "name": "Empty Array",
+          "description": "Boundary: no pointers to place.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "target": 4
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: every value identical.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              5,
+              5,
+              5,
+              5
+            ]
+          },
+          "params": {
+            "target": 10
+          }
+        },
+        {
+          "name": "Already Sorted",
+          "description": "Sorted input converges immediately.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "params": {
+            "target": 7
+          }
+        }
+      ]
+    }
+  ]
+}

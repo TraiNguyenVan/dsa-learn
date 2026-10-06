@@ -1,9 +1,16 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+.so
 .pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Test / coverage output
+coverage/
+htmlcov/
 
 # C / C++ build artifacts
 build/

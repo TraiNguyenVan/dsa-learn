@@ -132,6 +132,7 @@ def get_topic_lesson(topic_id: str, db_path: Path | None = None) -> dict[str, An
     # Find topic title and description from catalog.json
     topic_title = topic_id.replace("-", " ").title()
     topic_desc = f"Comprehensive conceptual guide and complexity analysis for {topic_title}."
+    prerequisites: list[str] = []
 
     if CATALOG_PATH.exists():
         try:
@@ -141,6 +142,8 @@ def get_topic_lesson(topic_id: str, db_path: Path | None = None) -> dict[str, An
                     if t.get("id") == topic_id:
                         topic_title = t.get("title", topic_title)
                         topic_desc = t.get("description", topic_desc)
+                        # spec 006 R-011: always present, defaults to [].
+                        prerequisites = list(t.get("prerequisites", []) or [])
                         break
         except Exception:
             pass
@@ -150,6 +153,7 @@ def get_topic_lesson(topic_id: str, db_path: Path | None = None) -> dict[str, An
     meta_file = topic_dir / "topic_meta.json"
 
     lesson_data: dict[str, Any] = {}
+    is_placeholder = not lesson_file.exists()
 
     if lesson_file.exists():
         with open(lesson_file, "r", encoding="utf-8") as f:
@@ -159,6 +163,9 @@ def get_topic_lesson(topic_id: str, db_path: Path | None = None) -> dict[str, An
         lesson_data["summary"] = topic_desc
         lesson_data["sections"] = sections
     else:
+        # spec 006 R-008: the generic fallback is kept as an authoring
+        # intermediate so navigation keeps working, but it is now flagged so no
+        # learner mistakes boilerplate for real teaching material (FR-001).
         lesson_data = get_default_lesson_for_topic(topic_id, topic_title, topic_desc)
 
     # Load complexity matrix from meta_file if present
@@ -187,163 +194,176 @@ def get_topic_lesson(topic_id: str, db_path: Path | None = None) -> dict[str, An
         "topic_id": topic_id,
         "title": lesson_data.get("title", topic_title),
         "summary": lesson_data.get("summary", topic_desc),
+        # spec 006 R-008: lets the viewer distinguish authored teaching content
+        # from the generic fallback. Placeholder lessons accrue no credit.
+        "is_placeholder": is_placeholder,
+        "prerequisites": prerequisites,
         "sections": lesson_data.get("sections", []),
         "complexity_matrix": lesson_data.get("complexity_matrix", []),
         "reading_progress": progress,
     }
 
 
+# ---------------------------------------------------------------------------
+# Coverage report (spec 006 R-012, contract H-09)
+#
+# Derived from material that actually exists rather than stored, so
+# docs/roadmap-reference.md can be regenerated from this response instead of
+# maintained by hand. A topic counts as visualized only when it declares
+# operations in visualization.json; the registry itself is client-side and is
+# checked for parity by the frontend contract test (G-05).
+# ---------------------------------------------------------------------------
+
+REQUIRED_LESSON_SECTION_KEYWORDS = ("correctness", "derivation", "limits")
+
+
+def _has_authored_lesson(topic_id: str) -> bool:
+    return (TOPICS_DIR / topic_id / "lesson.md").exists()
+
+
+def _has_placeholder_free_lesson(topic_id: str) -> bool:
+    """True when the authored lesson carries the deeper-theory sections.
+
+    Distinct from `_has_authored_lesson`: a topic may have a real lesson written
+    before the deeper-theory standard existed (four topics do), and that lesson is
+    genuine teaching content, not a placeholder -- it simply does not yet meet
+    FR-007..FR-009. The two states fail different gates.
+    """
+    lesson = TOPICS_DIR / topic_id / "lesson.md"
+    if not lesson.exists():
+        return False
+    text = lesson.read_text(encoding="utf-8").lower()
+    return all(keyword in text for keyword in REQUIRED_LESSON_SECTION_KEYWORDS)
+
+
+def _has_cost_table(topic_id: str) -> bool:
+    meta_path = TOPICS_DIR / topic_id / "topic_meta.json"
+    if not meta_path.exists():
+        return False
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    return len(meta.get("complexity_matrix", []) or []) >= 5
+
+
+def _declared_operation_ids(topic_id: str) -> list[str]:
+    viz_path = TOPICS_DIR / topic_id / "visualization.json"
+    if not viz_path.exists():
+        return []
+    try:
+        data = json.loads(viz_path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    return [op.get("id", "") for op in data.get("operations", []) if op.get("id")]
+
+
+def _has_visualization(topic_id: str) -> bool:
+    return len(_declared_operation_ids(topic_id)) > 0
+
+
+def _has_implementation_exercise(topic_id: str) -> bool:
+    if not CATALOG_PATH.exists():
+        return False
+    try:
+        catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    for topic in catalog.get("topics", []):
+        if topic.get("id") != topic_id:
+            continue
+        for exercise in topic.get("exercises", []) or []:
+            if exercise.get("kind") == "implementation":
+                return True
+    return False
+
+
+def get_coverage_status() -> dict[str, Any]:
+    """Return the derived curriculum coverage report (contract §7.3)."""
+    if not CATALOG_PATH.exists():
+        return {"topics": [], "topic_count": 0, "exercise_count": 0}
+
+    catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    topics = catalog.get("topics", [])
+
+    per_topic: list[dict[str, Any]] = []
+    exercise_count = 0
+    implementation_count = 0
+
+    for topic in topics:
+        topic_id = topic.get("id", "")
+        exercises = topic.get("exercises", []) or []
+        exercise_count += len(exercises)
+        implementation_count += sum(
+            1 for e in exercises if e.get("kind") == "implementation"
+        )
+        has_lesson = _has_authored_lesson(topic_id)
+        per_topic.append(
+            {
+                "topic_id": topic_id,
+                "title": topic.get("title", topic_id),
+                "display_order": topic.get("display_order"),
+                "prerequisites": list(topic.get("prerequisites", []) or []),
+                "has_lesson": has_lesson,
+                # True only when no lesson.md exists and the generic fallback is
+                # substituted. Distinct from the flag below: a topic can have a
+                # real lesson that still predates the deeper-theory standard.
+                "is_placeholder_lesson": not has_lesson,
+                # True when the authored lesson carries the correctness-argument,
+                # cost-derivations and limits sections (FR-007..FR-009). Gate
+                # G-03/G-04 fail on this, not on `is_placeholder_lesson`.
+                "has_required_theory_sections": _has_placeholder_free_lesson(topic_id),
+                "has_cost_table": _has_cost_table(topic_id),
+                "has_visualization": _has_visualization(topic_id),
+                "has_implementation_exercise": _has_implementation_exercise(topic_id),
+                "declared_operation_ids": _declared_operation_ids(topic_id),
+                "exercise_count": len(exercises),
+            }
+        )
+
+    return {
+        "topic_count": len(topics),
+        "exercise_count": exercise_count,
+        "problem_exercise_count": exercise_count - implementation_count,
+        "implementation_exercise_count": implementation_count,
+        "declared_visualization_count": sum(len(t["declared_operation_ids"]) for t in per_topic),
+        "topics_with_authored_lesson": sum(1 for t in per_topic if t["has_lesson"]),
+        "topics_with_placeholder_lesson": sum(1 for t in per_topic if t["is_placeholder_lesson"]),
+        "topics_with_required_theory_sections": sum(
+            1 for t in per_topic if t["has_required_theory_sections"]
+        ),
+        "topics_with_cost_table": sum(1 for t in per_topic if t["has_cost_table"]),
+        "topics_with_visualization": sum(1 for t in per_topic if t["has_visualization"]),
+        "topics_with_implementation_exercise": sum(
+            1 for t in per_topic if t["has_implementation_exercise"]
+        ),
+        "topics": per_topic,
+    }
+
+
 def get_patterns_catalog(topic_id: str | None = None) -> dict[str, Any]:
-    """Retrieve algorithmic pattern blueprints and decision matrix comparison entries."""
+    """Retrieve pattern blueprints and decision-matrix entries.
+
+    spec 006 R-002: patterns.json is the single source of truth. This function
+    previously carried a second, inline copy of two blueprints as a fallback for
+    when the file was absent -- two authored copies of the same content, which is
+    exactly the drift hazard the registry-parity gate exists to prevent. A missing
+    file now yields an empty catalogue, which is honest: the curriculum says it
+    has no patterns rather than silently serving stale ones.
+    """
     if not PATTERNS_PATH.exists():
-        # Default baseline patterns if file not yet authored
-        patterns = [
-            {
-                "id": "two-pointers-opposite-ends",
-                "title": "Opposite-End Two Pointers",
-                "topic_ids": ["arrays-hashing", "two-pointers"],
-                "summary": "Converge left and right pointers towards the center to find pairs or partition elements.",
-                "trigger_cues": [
-                    "Array or string is sorted",
-                    "Find two elements summing to a target value",
-                    "Reversing an array or validating a palindrome in-place",
-                ],
-                "invariant_rules": [
-                    "Pointers satisfy left < right at each iteration",
-                    "Elements before left and after right have already been evaluated",
-                ],
-                "code_template_cpp": """// C++20 Opposite-End Two Pointers Template
-#include <span>
-#include <optional>
-#include <utility>
+        return {"patterns": [], "decision_matrix": []}
 
-std::optional<std::pair<int, int>> two_sum_sorted(std::span<const int> nums, int target) {
-    if (nums.empty()) return std::nullopt;
-    int left = 0;
-    int right = static_cast<int>(nums.size()) - 1;
-
-    while (left < right) {
-        int current_sum = nums[left] + nums[right];
-        if (current_sum == target) {
-            return std::make_pair(left, right);
-        } else if (current_sum < target) {
-            ++left; // Need a larger sum
-        } else {
-            --right; // Need a smaller sum
-        }
+    with open(PATTERNS_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    patterns = data.get("patterns", [])
+    if topic_id:
+        patterns = [p for p in patterns if topic_id in p.get("topic_ids", [])]
+    return {
+        "patterns": patterns,
+        "decision_matrix": data.get("decision_matrix", []),
     }
-    return std::nullopt;
-}""",
-                "common_pitfalls": [
-                    "Off-by-one errors with right = size vs right = size - 1",
-                    "Applying to an unsorted array without sorting first",
-                    "Infinite loop if pointer increment/decrement logic is omitted",
-                ],
-                "related_exercise_ids": ["two-sum", "valid-palindrome", "two-sum-ii"],
-            },
-            {
-                "id": "sliding-window-variable",
-                "title": "Dynamic Sliding Window",
-                "topic_ids": ["sliding-window"],
-                "summary": "Expand a window with a right pointer while contracting with a left pointer to preserve an invariant.",
-                "trigger_cues": [
-                    "Subarray or substring problems with constraints",
-                    "Find shortest, longest, or optimal continuous subarray",
-                    "Window contains at most K distinct elements",
-                ],
-                "invariant_rules": [
-                    "Window [left, right] always satisfies problem constraints before evaluating metrics",
-                    "Right expands greedily; Left advances to restore violated conditions",
-                ],
-                "code_template_cpp": """// C++20 Sliding Window Template
-#include <span>
-#include <algorithm>
-#include <unordered_map>
 
-int longest_valid_window(std::span<const int> nums) {
-    int left = 0;
-    int max_len = 0;
-    std::unordered_map<int, int> counts;
-
-    for (int right = 0; right < static_cast<int>(nums.size()); ++right) {
-        // Expand window: add nums[right] to state
-        counts[nums[right]]++;
-
-        // Contract window while condition is violated
-        while (/* window violates constraint */ false) {
-            counts[nums[left]]--;
-            left++;
-        }
-
-        // Update optimal answer
-        max_len = std::max(max_len, right - left + 1);
-    }
-    return max_len;
-}""",
-                "common_pitfalls": [
-                    "Updating maximum length before contracting the window to a valid state",
-                    "Neglecting to remove elements from state hash table when left pointer advances",
-                ],
-                "related_exercise_ids": ["longest-substring-without-repeating-characters", "minimum-size-subarray-sum"],
-            },
-        ]
-        decision_matrix = [
-            {
-                "id": "element-lookup-and-search",
-                "scenario": "Fast element lookup and existence check",
-                "candidates": [
-                    {
-                        "structure_name": "Hash Table (std::unordered_map / unordered_set)",
-                        "time_complexity": "O(1) average, O(N) worst",
-                        "space_overhead": "Moderate (bucket array and collision lists)",
-                        "best_when": "Keys are hashable and order does not matter",
-                        "avoid_when": "Sorted order or range queries are required",
-                        "is_recommended": True,
-                    },
-                    {
-                        "structure_name": "Balanced Binary Search Tree (std::map / std::set)",
-                        "time_complexity": "O(log N) strict",
-                        "space_overhead": "High (node pointers and balance metadata)",
-                        "best_when": "Sorted order iteration and predecessor/successor lookups are needed",
-                        "avoid_when": "Only raw equality lookups are needed and O(1) is required",
-                        "is_recommended": False,
-                    },
-                    {
-                        "structure_name": "Sorted Array with Binary Search",
-                        "time_complexity": "O(log N) search, O(N) insert/delete",
-                        "space_overhead": "Zero (contiguous)",
-                        "best_when": "Static or read-heavy data with no runtime insertions",
-                        "avoid_when": "Frequent insertions and deletions occur at runtime",
-                        "is_recommended": False,
-                    },
-                ],
-            },
-            {
-                "id": "priority-and-extremum-access",
-                "scenario": "Continuous retrieval and updates of minimum or maximum element",
-                "candidates": [
-                    {
-                        "structure_name": "Binary Heap (std::priority_queue)",
-                        "time_complexity": "O(1) find extremum, O(log N) push/pop",
-                        "space_overhead": "Zero (implemented over contiguous vector)",
-                        "best_when": "Only need top element (min or max) without searching arbitrary keys",
-                        "avoid_when": "Need to search, delete, or update arbitrary middle elements",
-                        "is_recommended": True,
-                    },
-                    {
-                        "structure_name": "Sorted Array",
-                        "time_complexity": "O(1) access, O(N) insert",
-                        "space_overhead": "Zero",
-                        "best_when": "Dataset is immutable or pre-sorted once",
-                        "avoid_when": "Streaming data with dynamic insertions",
-                        "is_recommended": False,
-                    },
-                ],
-            },
-        ]
-        if topic_id:
-            patterns = [p for p in patterns if topic_id in p.get("topic_ids", [])]
-        return {"patterns": patterns, "decision_matrix": decision_matrix}
 
     with open(PATTERNS_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)

@@ -1,0 +1,127 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Comparison of two keys in the decision tree",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One branch per level. Total comparisons are what the n!-leaves argument bounds.",
+      "derivation_ref": "cost-derivations#tree argument"
+    },
+    {
+      "operation": "Merge two sorted runs",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(n)",
+      "notes": "Linear in the combined run length; each element is emitted exactly once.",
+      "derivation_ref": "cost-derivations#recursion tree"
+    },
+    {
+      "operation": "Mergesort (whole array)",
+      "best_time": "O(n log n)",
+      "average_time": "O(n log n)",
+      "worst_time": "O(n log n)",
+      "space_complexity": "O(n)",
+      "notes": "Theta(n log n) on every input, which is the reason it is the safe default. Aux space is one reused scratch buffer.",
+      "derivation_ref": "cost-derivations#recursion tree"
+    },
+    {
+      "operation": "Partition around a pivot",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(1)",
+      "notes": "One linear pass in place. This is the unit of work, not the algorithm.",
+      "derivation_ref": "cost-derivations#on average"
+    },
+    {
+      "operation": "Quicksort with a random pivot",
+      "best_time": "O(n log n)",
+      "average_time": "O(n log n)",
+      "worst_time": "O(n log n)",
+      "space_complexity": "O(log n)",
+      "notes": "Expected depth is O(log n); randomisation removes dependence on input order, so the worst case matches expectation in expectation.",
+      "derivation_ref": "cost-derivations#on average"
+    },
+    {
+      "operation": "Quicksort with a deterministic first-element pivot on sorted input",
+      "best_time": "O(n)",
+      "average_time": "O(n^2)",
+      "worst_time": "O(n^2)",
+      "space_complexity": "O(n)",
+      "notes": "Recurrence becomes T(n) = T(n-1) + Theta(n). Also recurses n deep, so it can exhaust the native stack.",
+      "derivation_ref": "cost-derivations#on average"
+    },
+    {
+      "operation": "Insertion sort on unsorted input",
+      "best_time": "O(n)",
+      "average_time": "O(n^2)",
+      "worst_time": "O(n^2)",
+      "space_complexity": "O(1)",
+      "notes": "Quadratic, and kept only for small ranges or adaptive use.",
+      "derivation_ref": "cost-derivations#quadratic term"
+    },
+    {
+      "operation": "Insertion sort on already sorted input",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(1)",
+      "notes": "Adaptive: each pass finds the insertion point immediately. This is why hybrids use it below n ~ 16.",
+      "derivation_ref": "cost-derivations#quadratic term"
+    },
+    {
+      "operation": "Counting sort (bounded integer keys)",
+      "best_time": "O(n + k)",
+      "average_time": "O(n + k)",
+      "worst_time": "O(n + k)",
+      "space_complexity": "O(n + k)",
+      "notes": "k is the key range. Performs no comparisons at all, which is how it escapes the n log n barrier.",
+      "derivation_ref": "cost-derivations#counting sort"
+    },
+    {
+      "operation": "Radix sort, d passes over fixed-width keys",
+      "best_time": "O(n + k)",
+      "average_time": "O(d(n + k))",
+      "worst_time": "O(d(n + k))",
+      "space_complexity": "O(n + k)",
+      "notes": "d is the digit count. Each pass is a stable counting sort on one digit.",
+      "derivation_ref": "cost-derivations#counting sort"
+    },
+    {
+      "operation": "Heapsort (whole array)",
+      "best_time": "O(n log n)",
+      "average_time": "O(n log n)",
+      "worst_time": "O(n log n)",
+      "space_complexity": "O(1)",
+      "notes": "The only in-place sort with a worst-case n log n guarantee, at the cost of the worst memory access pattern.",
+      "derivation_ref": "cost-derivations#recursion tree"
+    },
+    {
+      "operation": "Comparison lower bound for any comparison sort",
+      "best_time": "Omega(n log n)",
+      "average_time": "Omega(n log n)",
+      "worst_time": "Omega(n log n)",
+      "space_complexity": "O(1)",
+      "notes": "n! orderings need n! leaves; a depth-k binary tree has at most 2^k. Attained, so this is optimal rather than merely best-known.",
+      "derivation_ref": "cost-derivations#tree argument"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Mergesort is correct by induction on run length: two sorted runs merge into a sorted sequence because the smaller front element is always the minimum of the union. Quicksort is correct because partitioning places every element at or before the pivot in order, so sorting each side sorts the whole. Counting sort is correct only because the prefix sum gives the exact count of keys below each key, an assumption that is invalid outside a bounded range."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Solving n! <= 2^k gives k >= ceil(log2(n!)) = Omega(n log n), and mergesort spends exactly that by paying Theta(n) at each of log2 n levels. Counting sort achieves Theta(n + k) by performing no comparisons, which is only sound when the key range is bounded.",
+      "detail": "Insertion sort is quadratic on random input but linear on sorted input, so its value is adaptivity rather than its bound."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "No comparison sort can beat Omega(n log n) because the bound is a property of the problem class, not of an algorithm. Beating it requires leaving the comparison model entirely, as counting and radix sorts do, and paying for the key range in both time and space. Heapsort attains the optimal worst case with the worst memory access pattern of any comparison sort, which is why introsort runs quicksort and falls back to heapsort only at a depth limit."
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Exact membership (Contains)",
+      "best_time": "O(1)",
+      "average_time": "O(L)",
+      "worst_time": "O(L)",
+      "space_complexity": "O(1)",
+      "notes": "L is key length; independent of the collection size n. No worst case because no hashing is involved.",
+      "derivation_ref": "cost-derivations#lookup"
+    },
+    {
+      "operation": "Prefix existence (StartsWith)",
+      "best_time": "O(1)",
+      "average_time": "O(L)",
+      "worst_time": "O(L)",
+      "space_complexity": "O(1)",
+      "notes": "Identical walk to Contains, but the terminal flag is not consulted. This is the capability a hash table cannot provide at any price.",
+      "derivation_ref": "cost-derivations#lookup"
+    },
+    {
+      "operation": "Insert a key",
+      "best_time": "O(1)",
+      "average_time": "O(L)",
+      "worst_time": "O(L)",
+      "space_complexity": "O(L)",
+      "notes": "Walks L symbols, creating at most L nodes. Cannot be short-circuited, so insert-heavy workloads pay L per insert.",
+      "derivation_ref": "cost-derivations#insert"
+    },
+    {
+      "operation": "Delete a key, with pruning",
+      "best_time": "O(1)",
+      "average_time": "O(L)",
+      "worst_time": "O(L)",
+      "space_complexity": "O(L)",
+      "notes": "Clears the terminal flag then walks back removing childless non-terminal nodes. The only operation here that reclaims space.",
+      "derivation_ref": "cost-derivations#delete"
+    },
+    {
+      "operation": "Lexicographic enumeration of all keys",
+      "best_time": "O(D)",
+      "average_time": "O(D)",
+      "worst_time": "O(D)",
+      "space_complexity": "O(D)",
+      "notes": "D is the number of distinct prefixes present. Ordered output is produced by traversal order, so there is no sort term."
+    },
+    {
+      "operation": "Build a trie from n keys of length L",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(nL)",
+      "space_complexity": "O(nL)",
+      "notes": "O(nL) when prefixes do not overlap. O(n) is achievable when all keys share long prefixes, since total work is proportional to distinct prefixes.",
+      "derivation_ref": "cost-derivations#space"
+    },
+    {
+      "operation": "Total node count for n keys of length L",
+      "best_time": "Theta(n)",
+      "average_time": "Theta(n)",
+      "worst_time": "Theta(nL)",
+      "space_complexity": "Theta(nL)",
+      "notes": "Level i holds at most min(n, |Sigma|^i) nodes, so the total is at most nL+1 but typically far smaller when prefixes are shared.",
+      "derivation_ref": "cost-derivations#space"
+    },
+    {
+      "operation": "Symbol lookup with fixed fan-out",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(Sigma)",
+      "notes": "One contiguous array access. Space per node is O(Sigma), which is the waste that sparse representations trade for locality.",
+      "derivation_ref": "cost-derivations#lookup"
+    },
+    {
+      "operation": "Symbol lookup with sparse or linked children",
+      "best_time": "O(1)",
+      "average_time": "O(Sigma)",
+      "worst_time": "O(Sigma)",
+      "space_complexity": "O(k)",
+      "notes": "k is the actual child count. Bounded fanout, so still constant for a fixed alphabet, with far less wasted memory.",
+      "derivation_ref": "cost-derivations#space"
+    },
+    {
+      "operation": "Compressed / radix trie symbol lookup",
+      "best_time": "O(1)",
+      "average_time": "O(m)",
+      "worst_time": "O(m)",
+      "space_complexity": "O(n)",
+      "notes": "m is the length of the substring stored on the edge. Collapses single-child chains to O(n) nodes at the cost of substring comparison per step.",
+      "derivation_ref": "cost-derivations#space"
+    },
+    {
+      "operation": "Space versus a hash table storing the same keys",
+      "best_time": "O(nL)",
+      "average_time": "O(nL)",
+      "worst_time": "O(nL)",
+      "space_complexity": "O(nL)",
+      "notes": "The trie wins when distinct-prefix count times alphabet size is much smaller than n times key length. Random binary keys give no sharing at all."
+    },
+    {
+      "operation": "Memory locality per symbol resolution on sparse nodes",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One potential cache miss per symbol, since children are not allocated contiguously. Traversals are latency-bound rather than bandwidth-bound."
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "The path invariant makes membership a mechanical consequence of one walk: a failed walk means the node does not exist so the key is absent, and a successful walk means membership is exactly the terminal flag. Deletion pruning is sound because a node that is non-terminal and childless satisfies neither clause for any key, so removing it cannot displace a key."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Lookup walks exactly L symbols at O(1) each, so cost is proportional to key length and independent of n; total space is O(D) for D distinct prefixes present, which is what makes shared prefixes a genuine saving rather than merely implicit.",
+      "detail": "Space is Theta(nL) only when prefixes do not overlap; the sharing makes the node count sublinear in n for prefix-rich vocabularies."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "Fixed fan-out wastes memory because deep nodes are nearly empty while root nodes are full, and no representation is simultaneously compact, O(1) per symbol, and simple. Whether prefix sharing can be combined with hashing to beat O(nL) space while keeping O(L) worst-case lookup is not settled.",
+      "detail": "Membership is asymptotically worse than hashing: O(L) versus O(1) expected, compensated only by deterministic behaviour, cheap prefix queries and free lexicographic order."
+    }
+  }
+}

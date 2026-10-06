@@ -1,224 +1,161 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Sparkles,
-  RotateCcw,
-  AlertCircle,
-  HelpCircle,
-} from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Sparkles, RotateCcw, AlertCircle, HelpCircle } from 'lucide-react';
 import { VisualizerStateFrame } from '@/lib/types';
-import { recordVisualizerProgress } from '@/lib/api';
-import { generateBinarySearchTrace, generateTwoSumTrace } from './engine/arrayVisualizer';
-import { generateInsertHeadTrace, generateReverseListTrace } from './engine/linkedListVisualizer';
-import { generateBSTInsertTrace, generateBSTSearchTrace } from './engine/treeVisualizer';
-import { generateHeapInsertTrace } from './engine/heapVisualizer';
+import { recordVisualizerProgress, getPlaybackPosition, savePlaybackPosition } from '@/lib/api';
+import { getVisualizationsForTopic } from './registry';
+import { registerExistingGenerators, formatInput } from './registry/registrations';
+import { renderFrame } from './renderers/rendererMap';
 import { usePlayback } from './engine/usePlayback';
-import { ArrayCanvas } from './renderers/ArrayCanvas';
-import { LinkedListCanvas } from './renderers/LinkedListCanvas';
-import { TreeCanvas } from './renderers/TreeCanvas';
-import { HeapCanvas } from './renderers/HeapCanvas';
-import { PlaybackControls } from './PlaybackControls';
 import { StepNarrative } from './StepNarrative';
+import { PlaybackControls } from './PlaybackControls';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+
+registerExistingGenerators();
 
 interface VisualizerContainerProps {
   topicId: string;
 }
 
-interface OperationOption {
-  id: string;
-  name: string;
-  defaultInput: string;
-  defaultParam: number;
-  presets: Array<{ name: string; input: string; param: number }>;
-}
-
 export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({ topicId }) => {
-  // Determine available operations based on topic
-  const operations: OperationOption[] = useMemo(() => {
-    if (topicId === 'linked-lists') {
-      return [
-        {
-          id: 'insert_head',
-          name: 'Insert at Head',
-          defaultInput: '10, 20, 30',
-          defaultParam: 5,
-          presets: [
-            { name: 'Standard List', input: '10, 20, 30', param: 5 },
-            { name: 'Empty List (Boundary)', input: '', param: 42 },
-            { name: 'Single Node', input: '99', param: 1 },
-          ],
-        },
-        {
-          id: 'reverse_list',
-          name: 'Reverse List (In-Place)',
-          defaultInput: '1, 2, 3, 4, 5',
-          defaultParam: 0,
-          presets: [
-            { name: 'Linear 5-Node List', input: '1, 2, 3, 4, 5', param: 0 },
-            { name: 'Two Nodes', input: '10, 20', param: 0 },
-            { name: 'Single Node', input: '42', param: 0 },
-          ],
-        },
-      ];
-    }
+  // Registry lookup replaces the previous `if (topicId === ...)` chain.
+  const operations = useMemo(() => getVisualizationsForTopic(topicId), [topicId]);
 
-    if (topicId === 'trees') {
-      return [
-        {
-          id: 'bst_search',
-          name: 'Binary Search Tree - Search',
-          defaultInput: '50, 30, 70, 20, 40, 60, 80',
-          defaultParam: 40,
-          presets: [
-            { name: 'Balanced Tree (Found)', input: '50, 30, 70, 20, 40, 60, 80', param: 40 },
-            { name: 'Missing Key', input: '50, 30, 70, 20, 40', param: 99 },
-            { name: 'Skewed Degenerate Tree (O(N))', input: '10, 20, 30, 40, 50', param: 50 },
-          ],
-        },
-        {
-          id: 'bst_insert',
-          name: 'Binary Search Tree - Insert',
-          defaultInput: '30, 15, 50, 10, 22',
-          defaultParam: 25,
-          presets: [
-            { name: 'Standard Tree', input: '30, 15, 50, 10, 22', param: 25 },
-            { name: 'Empty Tree', input: '', param: 50 },
-            { name: 'Duplicate Key (Ignored)', input: '30, 15, 50', param: 30 },
-          ],
-        },
-      ];
-    }
+  const [selectedOpId, setSelectedOpId] = useState<string>('');
+  const activeOp = useMemo(
+    () => operations.find((o) => o.operationId === selectedOpId) ?? operations[0],
+    [operations, selectedOpId],
+  );
 
-    if (topicId === 'heap') {
-      return [
-        {
-          id: 'heap_insert',
-          name: 'Min-Heap - Insert (Bubble-Up)',
-          defaultInput: '10, 20, 15, 30, 40',
-          defaultParam: 5,
-          presets: [
-            { name: 'Insert Smaller (Swaps to Root)', input: '10, 20, 15, 30, 40', param: 5 },
-            { name: 'Insert Larger (No Swap)', input: '10, 20, 15', param: 50 },
-          ],
-        },
-      ];
-    }
-
-    // Default for Arrays & Hashing, Two Pointers, Binary Search
-    return [
-      {
-        id: 'binary_search',
-        name: 'Binary Search (Array)',
-        defaultInput: '2, 5, 8, 12, 16, 23, 38, 56, 72, 91',
-        defaultParam: 23,
-        presets: [
-          { name: 'Target Present (Mid Partition)', input: '2, 5, 8, 12, 16, 23, 38, 56, 72, 91', param: 23 },
-          { name: 'Target Missing', input: '2, 5, 8, 12, 16, 23, 38', param: 15 },
-          { name: 'Boundary Element (Head)', input: '10, 20, 30, 40, 50', param: 10 },
-        ],
-      },
-      {
-        id: 'two_sum',
-        name: 'Two Pointers (Sorted Two Sum)',
-        defaultInput: '1, 3, 4, 7, 10, 11, 15',
-        defaultParam: 11,
-        presets: [
-          { name: 'Pair Present (4 + 7 = 11)', input: '1, 3, 4, 7, 10, 11, 15', param: 11 },
-          { name: 'Pair Missing', input: '2, 4, 6, 8, 10', param: 15 },
-        ],
-      },
-    ];
-  }, [topicId]);
-
-  const [selectedOpId, setSelectedOpId] = useState<string>(operations[0]?.id || '');
-  const activeOp = operations.find((o) => o.id === selectedOpId) || operations[0];
-
-  const [inputStr, setInputStr] = useState<string>(activeOp.defaultInput);
-  const [paramVal, setParamVal] = useState<number>(activeOp.defaultParam);
+  const [inputStr, setInputStr] = useState<string>('');
+  const [paramVal, setParamVal] = useState<string>('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
-  // Frames generation
   const [frames, setFrames] = useState<VisualizerStateFrame[]>([]);
+  const [resumeStep, setResumeStep] = useState(0);
 
-  const parseNums = useCallback((str: string): number[] => {
-    if (!str.trim()) return [];
-    return str
-      .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+  // Keep the newest position available to the persistence effect without making
+  // that effect re-run on every single step.
+  const stepRef = useRef(0);
+
+  // Select the first operation whenever the topic changes.
+  useEffect(() => {
+    setSelectedOpId(operations[0]?.operationId ?? '');
+  }, [operations]);
+
+  // Reset the input controls to the operation's declared defaults.
+  useEffect(() => {
+    if (!activeOp) return;
+    const preset = activeOp.presets[0];
+    setInputStr(formatInput(preset?.input));
+    const first = activeOp.parameters[0];
+    setParamVal(first ? String(preset?.params?.[first.name] ?? first.defaultValue ?? '') : '');
+  }, [activeOp]);
+
+  const parseInput = useCallback((str: string, type: string): number[] | string[] | null => {
+    if (!str.trim()) return type === 'numberList' ? [] : [];
+    if (type === 'stringList') {
+      return str.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    return str.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n));
   }, []);
 
-  const runOperation = useCallback(() => {
+  const runOperation = useCallback(async () => {
     setValidationError(null);
-    const nums = parseNums(inputStr);
+    if (!activeOp) {
+      setFrames([]);
+      return;
+    }
 
-    // Validate boundaries
-    if (nums.length > 20) {
+    const firstParam = activeOp.parameters[0];
+    const input = parseInput(inputStr, firstParam?.type ?? 'numberList');
+
+    if (Array.isArray(input) && input.length > 20) {
       setValidationError('Collection size capped at 20 elements for visual legibility.');
       return;
     }
-    for (const n of nums) {
-      if (n < -999 || n > 999) {
-        setValidationError('Elements must be between -999 and 999.');
-        return;
+    if (Array.isArray(input)) {
+      for (const n of input) {
+        if (typeof n === 'number' && (n < -999 || n > 999)) {
+          setValidationError('Elements must be between -999 and 999.');
+          return;
+        }
       }
     }
-    if (paramVal < -999 || paramVal > 999) {
+    if (paramVal !== '' && (Number(paramVal) < -999 || Number(paramVal) > 999)) {
       setValidationError('Parameter value must be between -999 and 999.');
       return;
     }
 
-    let generated: VisualizerStateFrame[] = [];
+    const params: Record<string, unknown> = {};
+    if (firstParam) params[firstParam.name] = paramVal === '' ? firstParam.defaultValue : Number(paramVal);
 
-    switch (activeOp.id) {
-      case 'binary_search':
-        generated = generateBinarySearchTrace(nums, paramVal);
-        break;
-      case 'two_sum':
-        generated = generateTwoSumTrace(nums, paramVal);
-        break;
-      case 'insert_head':
-        generated = generateInsertHeadTrace(nums, paramVal);
-        break;
-      case 'reverse_list':
-        generated = generateReverseListTrace(nums);
-        break;
-      case 'bst_search':
-        generated = generateBSTSearchTrace(nums, paramVal);
-        break;
-      case 'bst_insert':
-        generated = generateBSTInsertTrace(nums, paramVal);
-        break;
-      case 'heap_insert':
-        generated = generateHeapInsertTrace(nums, paramVal);
-        break;
-      default:
-        generated = generateBinarySearchTrace(nums, paramVal);
-    }
-
+    const generated = activeOp.generate(input as never, params);
     setFrames(generated);
+    stepRef.current = 0;
+    setResumeStep(0);
 
-    // Persist explored operation in SQLite
-    recordVisualizerProgress(topicId, activeOp.id).catch(() => {});
-  }, [activeOp.id, inputStr, paramVal, parseNums, topicId]);
+    recordVisualizerProgress(topicId, activeOp.operationId).catch(() => {});
 
-  // Re-run on op change
-  useEffect(() => {
-    setInputStr(activeOp.defaultInput);
-    setParamVal(activeOp.defaultParam);
-  }, [activeOp]);
+    // FR-017: restore where this learner last stopped, when that position is
+    // still meaningful for the frames just generated.
+    try {
+      const saved = await getPlaybackPosition(topicId, activeOp.operationId);
+      const valid =
+        saved.last_step > 0 && saved.last_step < generated.length && saved.last_step < saved.total_steps
+          ? saved.last_step
+          : 0;
+      stepRef.current = valid;
+      setResumeStep(valid);
+    } catch {
+      /* progress persistence is best-effort */
+    }
+  }, [activeOp, inputStr, paramVal, parseInput, topicId]);
 
   useEffect(() => {
     runOperation();
-  }, [runOperation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOp?.operationId]);
 
   const playback = usePlayback({
     totalSteps: frames.length,
+    initialStep: resumeStep,
+    onStepChange: (step) => {
+      stepRef.current = step;
+    },
   });
 
+  // Persist the playback position, debounced so a fast playthrough does not
+  // issue one request per frame (contract H-06).
+  useEffect(() => {
+    if (!activeOp || frames.length === 0) return;
+    const handle = setTimeout(() => {
+      savePlaybackPosition(topicId, activeOp.operationId, stepRef.current, frames.length).catch(() => {});
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [playback.currentStep, activeOp, frames.length, topicId]);
+
   const currentFrame = frames[playback.currentStep] || frames[0];
+
+  // FR-013: a topic with no authored animation says so explicitly. It must never
+  // fall back to another topic's animation.
+  if (operations.length === 0) {
+    return (
+      <div className="h-full flex flex-col bg-[#0F172A] p-4 lg:p-6 overflow-y-auto select-none">
+        <div className="max-w-2xl mx-auto w-full border border-slate-800 rounded-xl bg-slate-900/60 p-8 text-center">
+          <AlertCircle className="w-6 h-6 mx-auto mb-3 text-amber-400" />
+          <h3 className="text-sm font-semibold text-slate-200 mb-2">
+            Visualization not yet authored for this topic
+          </h3>
+          <p className="text-xs font-mono text-slate-400 leading-relaxed">
+            Theory and cost analysis are available under &ldquo;Concept &amp; Theory&rdquo;.
+            An animation for this topic is being authored and will appear here once it exists.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-[#0F172A] p-4 lg:p-6 overflow-y-auto select-none">
@@ -234,27 +171,28 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({ topicI
             </div>
 
             <select
-              value={activeOp.id}
+              value={activeOp?.operationId ?? ''}
               onChange={(e) => setSelectedOpId(e.target.value)}
               className="bg-slate-950 border border-slate-700 text-xs font-mono text-white rounded-md px-3 py-1.5 focus:outline-none focus:border-emerald-500"
             >
               {operations.map((op) => (
-                <option key={op.id} value={op.id}>
+                <option key={op.operationId} value={op.operationId}>
                   {op.name}
                 </option>
               ))}
             </select>
 
-            {/* Presets */}
-            {activeOp.presets && activeOp.presets.length > 0 && (
+            {activeOp && activeOp.presets.length > 0 && (
               <div className="flex items-center space-x-1.5 text-xs">
                 <span className="text-slate-500 text-[11px] font-mono">Presets:</span>
-                {activeOp.presets.map((p, idx) => (
+                {activeOp.presets.map((p) => (
                   <button
-                    key={idx}
+                    key={p.name}
+                    title={p.description}
                     onClick={() => {
-                      setInputStr(p.input);
-                      setParamVal(p.param);
+                      setInputStr(formatInput(p.input));
+                      const first = activeOp.parameters[0];
+                      setParamVal(first ? String(p.params[first.name] ?? '') : '');
                     }}
                     className="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 text-[11px] font-mono transition-colors"
                   >
@@ -288,15 +226,17 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({ topicI
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="text-slate-400">Target / Val:</span>
-            <input
-              type="number"
-              value={paramVal}
-              onChange={(e) => setParamVal(parseInt(e.target.value, 10) || 0)}
-              className="w-20 bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1 text-white focus:outline-none focus:border-emerald-500 text-xs text-center"
-            />
-          </div>
+          {activeOp && activeOp.parameters.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-400">{activeOp.parameters[0].label}:</span>
+              <input
+                type="number"
+                value={paramVal}
+                onChange={(e) => setParamVal(e.target.value)}
+                className="w-20 bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1 text-white focus:outline-none focus:border-emerald-500 text-xs text-center"
+              />
+            </div>
+          )}
         </div>
 
         {validationError && (
@@ -308,33 +248,7 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({ topicI
 
         {/* Canvas Display Surface */}
         <div className="border border-slate-800 rounded-xl bg-gradient-to-b from-slate-950 to-[#0B1220] min-h-[280px] flex items-center justify-center relative overflow-hidden shadow-inner">
-          {currentFrame?.data_structure_type === 'ARRAY' && (
-            <ArrayCanvas
-              elements={currentFrame.array_state?.elements || []}
-              pointers={currentFrame.array_state?.pointers || []}
-            />
-          )}
-
-          {currentFrame?.data_structure_type === 'LINKED_LIST' && (
-            <LinkedListCanvas
-              nodes={currentFrame.linked_list_state?.nodes || []}
-              pointers={currentFrame.linked_list_state?.pointers || []}
-            />
-          )}
-
-          {currentFrame?.data_structure_type === 'BINARY_SEARCH_TREE' && (
-            <TreeCanvas
-              nodes={currentFrame.tree_state?.nodes || []}
-              activeNodeId={currentFrame.tree_state?.active_node_id}
-            />
-          )}
-
-          {currentFrame?.data_structure_type === 'HEAP' && (
-            <HeapCanvas
-              elements={currentFrame.heap_state?.elements || []}
-              swappingIndices={currentFrame.heap_state?.swapping_indices}
-            />
-          )}
+          {renderFrame(currentFrame)}
         </div>
 
         {/* Step Commentary Narrative */}
@@ -342,6 +256,7 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({ topicI
           <StepNarrative
             actionType={currentFrame.action_type}
             description={currentFrame.description}
+            rationale={currentFrame.rationale}
             stepIndex={playback.currentStep}
             totalSteps={frames.length}
           />
@@ -375,8 +290,8 @@ export const VisualizerContainer: React.FC<VisualizerContainerProps> = ({ topicI
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowHelp(false)}
                   className="h-6 w-6 p-0 text-slate-500 hover:text-white"
+                  onClick={() => setShowHelp(false)}
                 >
                   ✕
                 </Button>

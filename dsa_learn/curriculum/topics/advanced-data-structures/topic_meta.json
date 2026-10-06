@@ -1,0 +1,136 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Segment tree build over n elements",
+      "best_time": "Theta(n)",
+      "average_time": "Theta(n)",
+      "worst_time": "Theta(n)",
+      "space_complexity": "Theta(4n)",
+      "notes": "Fewer than 2n nodes with one O(1) merge each. Construction is linear, not n log n; the logarithm applies to queries.",
+      "derivation_ref": "cost-derivations#segment tree build"
+    },
+    {
+      "operation": "Segment tree range query",
+      "best_time": "O(log n)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "O(log n)",
+      "notes": "A contiguous range is covered by O(log n) canonical nodes because at each level at most two are partially covered.",
+      "derivation_ref": "cost-derivations#segment tree build"
+    },
+    {
+      "operation": "Segment tree point update",
+      "best_time": "O(log n)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "O(1)",
+      "notes": "One root-to-leaf walk recomputing one aggregate per level. Aux space is constant without recursion.",
+      "derivation_ref": "cost-derivations#segment tree build"
+    },
+    {
+      "operation": "Segment tree range update",
+      "best_time": "O(log n)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "O(log n)",
+      "notes": "Uses lazy propagation to defer pushes to children, deferring work rather than avoiding it.",
+      "derivation_ref": "cost-derivations#segment tree build"
+    },
+    {
+      "operation": "Fenwick tree build from an array",
+      "best_time": "O(n)",
+      "average_time": "O(n log n)",
+      "worst_time": "O(n log n)",
+      "space_complexity": "Theta(n)",
+      "notes": "O(n log n) by repeated adds; O(n) with the linear in-place build that accumulates parents top-down.",
+      "derivation_ref": "cost-derivations#fenwick"
+    },
+    {
+      "operation": "Fenwick prefix sum or point update",
+      "best_time": "O(log n)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "Theta(n)",
+      "notes": "One loop; the index advances by the lowest set bit, so the loop runs once per bit position.",
+      "derivation_ref": "cost-derivations#fenwick"
+    },
+    {
+      "operation": "Fenwick range sum",
+      "best_time": "O(log n)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "Theta(n)",
+      "notes": "Two prefix queries differenced. Requires an invertible aggregate, which is why range minimum is not supported.",
+      "derivation_ref": "cost-derivations#fenwick"
+    },
+    {
+      "operation": "Fenwick range minimum",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "Theta(n)",
+      "notes": "Not supported. Minimum has no inverse, so prefix values cannot be differenced into a range value.",
+      "derivation_ref": "cost-derivations#fenwick"
+    },
+    {
+      "operation": "Union-find find with path compression alone",
+      "best_time": "O(1)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "Theta(n)",
+      "notes": "Amortised O(log n). Compression flattens paths without changing which root a node belongs to, so correctness is untouched.",
+      "derivation_ref": "cost-derivations#union"
+    },
+    {
+      "operation": "Union-find merge with union by rank alone",
+      "best_time": "O(log n)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "Theta(n)",
+      "notes": "Tree height bounded by log n, since a depth increment implies a component that has at least doubled.",
+      "derivation_ref": "cost-derivations#union"
+    },
+    {
+      "operation": "Union-find with both optimisations",
+      "best_time": "O(1)",
+      "average_time": "O(alpha(n))",
+      "worst_time": "O(log n)",
+      "space_complexity": "Theta(n)",
+      "notes": "Total cost O((n+m) alpha(n)) for m operations. Effectively constant, which is what makes near-linear algorithms feasible.",
+      "derivation_ref": "cost-derivations#union"
+    },
+    {
+      "operation": "Iterative segment tree layout",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "Theta(n)",
+      "notes": "Between n and 2n slots versus the recursive layout's up to 4n, with no recursion and better locality.",
+      "derivation_ref": "cost-derivations#segment tree build"
+    },
+    {
+      "operation": "Wavelet tree range counting",
+      "best_time": "O(log sigma)",
+      "average_time": "O(log sigma)",
+      "worst_time": "O(log sigma)",
+      "space_complexity": "Theta(n log sigma)",
+      "notes": "sigma is the value range. Beats a segment tree on counting queries when values come from a small domain.",
+      "derivation_ref": "cost-derivations#segment tree build"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "A segment tree node is correct by induction because its range is the disjoint union of its children's and the merge is associative; a query is correct because the canonical nodes it merges partition the query range exactly. Union-find preserves its equivalence classes because path compression rewrites pointers within a tree and union links only two distinct roots, so neither changes which component any element belongs to."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Segment tree build is Theta(n) because there are fewer than 2n nodes each doing O(1) work, while queries and updates are O(log n) because each is one root-to-leaf walk. Union-find reaches O(alpha(n)) amortised only when path compression and union by rank are combined; either alone gives only O(log n).",
+      "detail": "A Fenwick tree achieves O(log n) per operation in a loop of about one iteration per bit position, at exactly n+1 entries."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "No comparison-based structure gives O(1) range queries with O(1) updates; the O(1)-query result holds only for static data after O(n) preprocessing. Union-find's near-constant bound is bought by restricting to merge-only operations, so it cannot answer connectivity after removals or path queries that exclude a vertex. The 4n segment-tree figure is a property of the recursive layout, not of the structure; the iterative layout needs between n and 2n."
+    }
+  }
+}

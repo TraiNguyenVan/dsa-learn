@@ -1,0 +1,141 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Advance the right edge R by one position",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One increment plus one aggregate update. Charged to forward progress, so it happens at most N times over the whole run.",
+      "derivation_ref": "cost-derivations#movement"
+    },
+    {
+      "operation": "Advance the left edge L by one position",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "The invariant that L never decreases is what bounds total movement to at most 2N; a retreating L would allow quadratic travel.",
+      "derivation_ref": "cost-derivations#movement"
+    },
+    {
+      "operation": "Total window movement over a run",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "R advances at most N steps and L at most N steps, so total movement is at most 2N regardless of how the window width fluctuates.",
+      "derivation_ref": "cost-derivations#movement"
+    },
+    {
+      "operation": "Aggregate update on element entry or exit",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Assumes a counter or frequency table. This O(1) per update is the precondition for the whole technique being linear.",
+      "derivation_ref": "cost-derivations#amortised"
+    },
+    {
+      "operation": "Aggregate update using a segment tree or Fenwick tree",
+      "best_time": "O(log N)",
+      "average_time": "O(log N)",
+      "worst_time": "O(log N)",
+      "space_complexity": "O(N)",
+      "notes": "For aggregates that are not incrementally updatable, such as a range minimum or range sum. Raises the total to O(N log N).",
+      "derivation_ref": "cost-derivations#movement"
+    },
+    {
+      "operation": "Aggregate recomputed by rescanning the window",
+      "best_time": "O(1)",
+      "average_time": "O(W)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "W is the maximum window width. Gives O(N * W) overall, which is the quadratic blow-up this technique exists to avoid.",
+      "derivation_ref": "cost-derivations#quadratic"
+    },
+    {
+      "operation": "Enumerate all subarrays directly (the naive scan)",
+      "best_time": "O(1)",
+      "average_time": "O(N^2)",
+      "worst_time": "O(N^2)",
+      "space_complexity": "O(1)",
+      "notes": "There are N(N+1)/2 subarrays. Windowing visits N positions of R and reuses the previous aggregate instead of rebuilding it.",
+      "derivation_ref": "cost-derivations#quadratic"
+    },
+    {
+      "operation": "Frequency-table space over a bounded alphabet",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "For byte-valued input the table has a fixed 256 entries, so space is independent of N and updates are O(1) worst case.",
+      "derivation_ref": "cost-derivations#alphabet"
+    },
+    {
+      "operation": "Frequency-map space over an unbounded value domain",
+      "best_time": "O(S)",
+      "average_time": "O(S)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(S)",
+      "notes": "S is the number of distinct values. Updates are O(1) expected, so claiming O(1) space requires stating the bounded-alphabet assumption.",
+      "derivation_ref": "cost-derivations#alphabet"
+    },
+    {
+      "operation": "Longest substring with no repeated character",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Shrinkable property: extend R until a duplicate appears, then contract L until it clears. Bounded alphabet keeps the table at O(1).",
+      "derivation_ref": "cost-derivations#amortised"
+    },
+    {
+      "operation": "Minimum-length subarray covering all required characters",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Growable property: record the answer each time the window becomes valid, then contract. Inverse of the shrink-when-valid pattern.",
+      "derivation_ref": "cost-derivations#movement"
+    },
+    {
+      "operation": "Extreme-value window with a monotonic deque",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(W)",
+      "notes": "Maintains the window maximum or minimum in O(1) per movement by discarding dominated elements on entry. Restores linearity without a segment tree.",
+      "derivation_ref": "cost-derivations#amortised"
+    },
+    {
+      "operation": "Whole windowing pass with a decision-only answer",
+      "best_time": "Omega(N)",
+      "average_time": "Theta(N)",
+      "worst_time": "Theta(N)",
+      "space_complexity": "O(1)",
+      "notes": "Omega(N) is a lower bound even for the decision problem: an adversary can hide the violating element anywhere, so inspecting k of N positions cannot distinguish them from a clean input.",
+      "derivation_ref": "cost-derivations#movement"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "At the end of each outer iteration the window is the largest valid window ending at the current right position, because every discarded left endpoint was proved invalid at the moment it was passed and, under the shrinkable property, remains invalid inside any super-window."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Since L never decreases, R advances at most N steps and L at most N steps, so total movement is at most 2N and each movement is O(1), giving O(N) overall whenever the aggregate is incrementally updatable.",
+      "detail": "Growth is charged to R and shrinkage to L, so a window that shrinks to size 1 and regrows to size N does not change the total."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "Omega(N) is required even to decide existence of a valid window, so no sub-linear answer is possible; the technique's reach is instead bounded by requiring inclusion-monotone validity over window contents, which excludes problems depending on non-adjacent positions."
+    }
+  },
+  "supporting_structure": {
+    "name": "Incrementally Updatable Window Aggregate",
+    "native_to_technique": true,
+    "rationale": "The technique has no container at all — there is nothing stored, only a pair of indices. What it does require is that every piece of state the loop consults be updatable in O(1) per entering or leaving element. A counter or frequency table supplies that for content-defined validity; a segment tree or BIT supplies it at O(log N) for range aggregates; a rescanning aggregate silently reinstates the quadratic cost the technique exists to remove. This structure is the technique's actual state, not an auxiliary choice."
+  }
+}

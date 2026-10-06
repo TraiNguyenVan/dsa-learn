@@ -1,0 +1,139 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Push onto a fixed-capacity array stack",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One store at index s plus one increment of s. No loop, no search over contents. Worst case O(1), not merely amortised."
+    },
+    {
+      "operation": "Pop from a fixed-capacity array stack",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Decrement s then read index s-1. The element falls outside the reachable range, so the pop is destructive."
+    },
+    {
+      "operation": "Peek / Top",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Reads index s-1 without modifying s. The only read operation a stack offers."
+    },
+    {
+      "operation": "IsEmpty / IsFull test",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Compares s against 0 or against the capacity. Both overflow checks are consequences of the stack invariant."
+    },
+    {
+      "operation": "Push onto a dynamic-array stack",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "O(1) amortised because each capacity-doubling copy is charged against the pushes since the previous resize. Worst case is the reallocation itself.",
+      "derivation_ref": "cost-derivations#operations"
+    },
+    {
+      "operation": "Push / pop onto a linked-node stack",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Also never overflows and never reallocates a block, but pays one allocation plus 8 bytes of pointer per element."
+    },
+    {
+      "operation": "Each element pushed and popped at most once, over N loop iterations",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(H)",
+      "notes": "At most N pushes and at most N pops, each O(1). This count, not any per-iteration window size, is what bounds every linear-time stack algorithm.",
+      "derivation_ref": "cost-derivations#pushed-and-popped"
+    },
+    {
+      "operation": "Balanced-delimiter matching across a string of length L",
+      "best_time": "O(1)",
+      "average_time": "O(L)",
+      "worst_time": "O(L)",
+      "space_complexity": "O(L)",
+      "notes": "One push or one pop per character. Auxiliary space is the depth of the deepest nesting, which is also a complete correctness check.",
+      "derivation_ref": "cost-derivations#delimiters"
+    },
+    {
+      "operation": "Infix expression evaluation, fully parenthesised, length L",
+      "best_time": "O(1)",
+      "average_time": "O(L)",
+      "worst_time": "O(L)",
+      "space_complexity": "O(L)",
+      "notes": "Worst-case space occurs on fully nested input such as ((((a)))) where every operator is resident at once, so the O(L) bound is tight.",
+      "derivation_ref": "cost-derivations#evaluation"
+    },
+    {
+      "operation": "Apply one operator once both operands are complete",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Two pops and one push. The evaluator's inner step; each token contributes at most one application."
+    },
+    {
+      "operation": "Monotonic stack pass with pop-on-violation",
+      "best_time": "O(N)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(N)",
+      "notes": "Naive counting suggests O(N^2) pops, but any element is popped at most once because popping removes it permanently. The quadratic worst case does not exist.",
+      "derivation_ref": "cost-derivations#monotonic"
+    },
+    {
+      "operation": "Access the element at depth k below the top",
+      "best_time": "O(0)",
+      "average_time": "O(k)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Requires k pops and k pushes. There is no random access, which is the interface's central restriction.",
+      "derivation_ref": "cost-derivations#operations"
+    },
+    {
+      "operation": "Recursive DFS / tree traversal using the call stack",
+      "best_time": "O(1)",
+      "average_time": "O(log N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(H)",
+      "notes": "O(H) frames, but the constant is the native stack size (about 8 MB), so a degenerate tree overflows and crashes rather than merely running slowly.",
+      "derivation_ref": "cost-derivations#operations"
+    },
+    {
+      "operation": "Compute the maximum or minimum of a stack",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Requires draining the stack. An expressiveness limit of the interface, not an implementation gap.",
+      "derivation_ref": "cost-derivations#operations"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Expression evaluation preserves a two-part invariant: completed subexpressions sit on the operand stack in left-to-right order, and operators whose right operand is incomplete sit on the operator stack. A closing parenthesis provably completes the right operand of each operator it unwinds, so every reduction applies to complete operands and the single remaining value is the whole expression."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Every element is pushed at most once and popped at most once, so over N loop iterations the total work is O(N) regardless of how imbalanced the pushes and pops are. The apparent O(N^2) monotonic-stack worst case is therefore impossible.",
+      "detail": "Monotonic stack total pops are bounded by N because a popped element is removed permanently and cannot be re-pushed, so total time is O(N) amortised."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "Depth-k access costs O(k) pops and pushes, so there is no random access and no O(1) extremum query. Unbounded recursion is bounded by the hardware call stack rather than by the algorithm, so an O(H) space claim hides a constant that is an 8 MB address space."
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Single bitwise operation (AND, OR, XOR, NOT, shift)",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One instruction on a fixed-width word, independent of how many bits are set.",
+      "derivation_ref": "cost-derivations#word size"
+    },
+    {
+      "operation": "Test bit k: x & (1 << k)",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Must use 1u or 1ULL; shifting into the sign bit of a signed type is undefined behaviour.",
+      "derivation_ref": "cost-derivations#signed"
+    },
+    {
+      "operation": "Clear lowest set bit: x & (x - 1)",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Subtracting one flips the low set bit and sets all lower bits; the AND keeps only the bits above it.",
+      "derivation_ref": "cost-derivations#word size"
+    },
+    {
+      "operation": "Isolate lowest set bit: x & -x",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Relies on two's complement, which C++20 guarantees. Use std::countr_zero for the portable form.",
+      "derivation_ref": "cost-derivations#word size"
+    },
+    {
+      "operation": "Kernighan popcount over n bits",
+      "best_time": "O(1)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(1)",
+      "notes": "Runs once per set bit. Hardware POPCNT reduces this to a single instruction on a word.",
+      "derivation_ref": "cost-derivations#popcount"
+    },
+    {
+      "operation": "Hardware word popcount",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Constant time, but only for one word: the word-level bound does not extend to unbounded widths.",
+      "derivation_ref": "cost-derivations#popcount"
+    },
+    {
+      "operation": "XOR of a whole array to find the odd element out",
+      "best_time": "O(1)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(1)",
+      "notes": "Correct only when every value appears an even number of times except one; otherwise it returns a plausible but meaningless value.",
+      "derivation_ref": "cost-derivations#xor prefix"
+    },
+    {
+      "operation": "Range XOR query via prefix array",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "Theta(n)",
+      "notes": "After O(n) preprocessing. A genuine asymptotic improvement over rescanning the range.",
+      "derivation_ref": "cost-derivations#xor prefix"
+    },
+    {
+      "operation": "Submask enumeration of a k-bit mask",
+      "best_time": "O(1)",
+      "average_time": "O(2^k)",
+      "worst_time": "O(2^k)",
+      "space_complexity": "O(1)",
+      "notes": "s = (s-1) & m visits every non-empty submask exactly once. Exponential, with no wasted iteration.",
+      "derivation_ref": "cost-derivations#subset enumeration"
+    },
+    {
+      "operation": "Bitset union / intersection / difference over W elements",
+      "best_time": "O(1)",
+      "average_time": "O(W/64)",
+      "worst_time": "O(W/64)",
+      "space_complexity": "O(W/64)",
+      "notes": "A 64-fold constant-factor gain over a boolean array. Both forms are still Theta(W).",
+      "derivation_ref": "cost-derivations#word size"
+    },
+    {
+      "operation": "Swap two values by XOR",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Works even when both operands are the same variable, unlike the temporary-swap idiom.",
+      "derivation_ref": "cost-derivations#word size"
+    },
+    {
+      "operation": "Concurrent atomic set-bit operation",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Needs compare-and-swap or fetch_or; the plain compound assignment is a read-modify-write and loses updates under contention.",
+      "derivation_ref": "cost-derivations#signed"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "XOR cancels pairs because it is associative and commutative so elements may be regrouped, and x XOR x is zero, so even-multiplicity groups vanish while odd-multiplicity groups collapse to a single copy. Each mask operation affects exactly one bit position because OR with zero, AND with one and XOR with one are all identity or constant on every other position."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Every bitwise operation is O(1) on a fixed-width word, so the number of operations never changes and only constants move, by at most the word size. Bitsets gain a factor of 64 per operation over boolean arrays while remaining Theta(W), and a range-XOR prefix array converts an O(range) scan into an O(1) query after O(n) preprocessing.",
+      "detail": "Kernighan popcount is O(set bits) because each step clears exactly one; hardware POPCNT is O(1) per word but does not extend to unbounded widths."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "No bitwise trick improves asymptotic complexity, since every operation is O(1) and only the constant moves. Fixed-width arithmetic cannot represent unbounded values, so beyond the word width each operation costs O(limbs) and the advantage disappears. Concurrent bit manipulation needs atomics because compound assignment is a read-modify-write. Signed shifts and 1 << 31 are undefined behaviour, not merely implementation-defined, which is why every bit routine should take unsigned parameters."
+    }
+  }
+}

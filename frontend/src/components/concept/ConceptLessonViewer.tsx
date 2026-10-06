@@ -8,6 +8,7 @@ import {
   Code2,
   ChevronRight,
   AlertCircle,
+  AlertTriangle,
   RefreshCw,
 } from 'lucide-react';
 import { ConceptLesson } from '@/lib/types';
@@ -150,6 +151,46 @@ export const ConceptLessonViewer: React.FC<ConceptLessonViewerProps> = ({
             </div>
           </div>
         </div>
+
+        {/* spec 006 R-008 / FR-001: the generic fallback is flagged, never
+            presented as authored teaching content. */}
+        {lesson.is_placeholder && (
+          <div className="border border-amber-700/50 bg-amber-950/30 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-semibold text-amber-200 mb-1">
+                This lesson has not been written yet
+              </h3>
+              <p className="text-xs text-amber-200/70 leading-relaxed font-mono">
+                The text below is generic scaffolding, not material specific to{' '}
+                {lesson.title}. It is shown so navigation keeps working while
+                authoring is in progress, and it earns no mastery credit. No new
+                lesson section can be completed until the authored version lands.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* spec 006 FR-004: declared prerequisites. Advisory, not a gate —
+            blocking would trap a learner who wants to explore ahead. */}
+        {lesson.prerequisites && lesson.prerequisites.length > 0 && (
+          <div className="border border-slate-800 rounded-xl p-4 bg-slate-900/50">
+            <h3 className="text-xs font-mono uppercase tracking-wide text-slate-400 mb-2">
+              Builds on
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {lesson.prerequisites.map((prereq) => (
+                <Badge
+                  key={prereq}
+                  variant="outline"
+                  className="bg-slate-800/60 text-slate-300 border-slate-700 text-xs font-mono"
+                >
+                  {prereq.replace(/-/g, ' ')}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Complexity Matrix Table */}
         {lesson.complexity_matrix && lesson.complexity_matrix.length > 0 && (

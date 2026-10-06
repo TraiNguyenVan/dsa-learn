@@ -1,0 +1,122 @@
+{
+  "operations": [
+    {
+      "id": "pruned_pair_search",
+      "name": "Backtracking with Pruning",
+      "description": "Recurses, backtracks, and prunes branches with a stated reason.",
+      "data_structure_type": "BACKTRACK",
+      "parameters": [
+        {
+          "name": "target",
+          "label": "Target Sum",
+          "type": "number",
+          "default_value": 9,
+          "min": -999,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Solution Found",
+          "description": "A pair exists early in the search.",
+          "input": {
+            "kind": "list",
+            "values": [
+              4,
+              8,
+              1,
+              5
+            ]
+          },
+          "params": {
+            "target": 9
+          }
+        },
+        {
+          "name": "Multiple Solutions",
+          "description": "Two or more pairs, so exhaustiveness is visible.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              8,
+              2,
+              7
+            ]
+          },
+          "params": {
+            "target": 9
+          }
+        },
+        {
+          "name": "No Solution",
+          "description": "Every candidate is pruned; absence is proved.",
+          "input": {
+            "kind": "list",
+            "values": [
+              20,
+              30,
+              40
+            ]
+          },
+          "params": {
+            "target": 9
+          }
+        },
+        {
+          "name": "Empty Input",
+          "description": "Boundary: no first move to try.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "target": 9
+          }
+        },
+        {
+          "name": "Single Element",
+          "description": "Boundary: no second index can pair with the first.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5
+            ]
+          },
+          "params": {
+            "target": 9
+          }
+        },
+        {
+          "name": "Two Elements",
+          "description": "Boundary: minimal non-trivial search.",
+          "input": {
+            "kind": "list",
+            "values": [
+              4,
+              5
+            ]
+          },
+          "params": {
+            "target": 9
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: equal values, multiple index pairs, one value sum.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              3,
+              3
+            ]
+          },
+          "params": {
+            "target": 6
+          }
+        }
+      ]
+    }
+  ]
+}

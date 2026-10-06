@@ -1,44 +1,135 @@
 {
   "complexity_matrix": [
     {
-      "operation": "Search (BST)",
+      "operation": "Search / find a key",
       "best_time": "O(1)",
       "average_time": "O(log N)",
       "worst_time": "O(N)",
-      "space_complexity": "O(log N) stack",
-      "notes": "Worst case O(N) when tree is unbalanced/skewed."
+      "space_complexity": "O(1)",
+      "notes": "Cost is the tree height H, not the node count. H = O(log N) when balanced, O(N) when degenerate.",
+      "derivation_ref": "cost-derivations#search-cost"
     },
     {
-      "operation": "Insertion (BST)",
+      "operation": "Insert a key",
+      "best_time": "O(log N)",
+      "average_time": "O(log N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Same descent as search plus one pointer assignment, so the bound is the height H. Degenerates identically to search.",
+      "derivation_ref": "cost-derivations#insertion"
+    },
+    {
+      "operation": "Delete a node with 0 or 1 child",
       "best_time": "O(1)",
       "average_time": "O(log N)",
       "worst_time": "O(N)",
-      "space_complexity": "O(log N) stack",
-      "notes": "Follows search path to leaf position."
+      "space_complexity": "O(1)",
+      "notes": "Given the node pointer, the splice itself is O(1); locating it costs the height H.",
+      "derivation_ref": "cost-derivations#insertion"
     },
     {
-      "operation": "Deletion (BST)",
-      "best_time": "O(1)",
+      "operation": "Delete a node with 2 children",
+      "best_time": "O(log N)",
       "average_time": "O(log N)",
       "worst_time": "O(N)",
-      "space_complexity": "O(log N) stack",
-      "notes": "Requires finding in-order successor if node has two children."
+      "space_complexity": "O(1)",
+      "notes": "Descends to the in-order successor and splices it out; a constant number of descents, each O(H).",
+      "derivation_ref": "cost-derivations#insertion"
     },
     {
-      "operation": "In-Order Traversal",
+      "operation": "Lower bound on height for any binary tree",
+      "best_time": "Omega(log N)",
+      "average_time": "Omega(log N)",
+      "worst_time": "Omega(log N)",
+      "space_complexity": "O(1)",
+      "notes": "A height-H binary tree holds at most 2^(H+1) - 1 nodes, so N <= 2^(H+1) - 1 forces H >= log2(N+1) - 1. Structural, not implementation-specific.",
+      "derivation_ref": "cost-derivations#search-cost"
+    },
+    {
+      "operation": "In-order / pre-order / post-order traversal",
       "best_time": "O(N)",
       "average_time": "O(N)",
       "worst_time": "O(N)",
-      "space_complexity": "O(H) height",
-      "notes": "Visits every node exactly once; produces sorted order."
+      "space_complexity": "O(H)",
+      "notes": "Time is Theta(N) because every node must be read. Recursion or an explicit stack holds at most H entries; O(H) is O(N) for a degenerate tree, which can overflow the call stack.",
+      "derivation_ref": "cost-derivations#traversal-costs"
     },
     {
-      "operation": "Level-Order Traversal (BFS)",
+      "operation": "Level-order (breadth-first) traversal",
       "best_time": "O(N)",
       "average_time": "O(N)",
       "worst_time": "O(N)",
-      "space_complexity": "O(W) max width",
-      "notes": "Uses FIFO queue; explores nodes level by level."
+      "space_complexity": "O(W)",
+      "notes": "W is the maximum width. For a complete tree W = N/2, so this is O(N) space — the one traversal whose space is not O(H).",
+      "derivation_ref": "cost-derivations#traversal-costs"
+    },
+    {
+      "operation": "Report tree height or count leaves only",
+      "best_time": "O(H)",
+      "average_time": "O(H)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(H)",
+      "notes": "Stops at the shallowest leaf rather than visiting every node, so it beats a full traversal whenever the tree is wide.",
+      "derivation_ref": "cost-derivations#traversal-costs"
+    },
+    {
+      "operation": "Range query over keys in [k1, k2]",
+      "best_time": "O(log N + R)",
+      "average_time": "O(log N + R)",
+      "worst_time": "O(log N + R)",
+      "space_complexity": "O(log N)",
+      "notes": "Descend to the first key >= k1, then walk successors while <= k2. R is the number of results and is unavoidable output.",
+      "derivation_ref": "cost-derivations#search-cost"
+    },
+    {
+      "operation": "Successor / predecessor query",
+      "best_time": "O(log N)",
+      "average_time": "O(log N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(H)",
+      "notes": "The capability a hash table cannot provide at any price, and the reason ordered structures exist.",
+      "derivation_ref": "cost-derivations#insertion"
+    },
+    {
+      "operation": "Membership lookup for comparison against hashing",
+      "best_time": "O(1)",
+      "average_time": "O(log N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(N)",
+      "notes": "A balanced tree is strictly worse than a hash table for membership alone (O(log N) vs O(1) expected). The tree is justified only by order-dependent operations.",
+      "derivation_ref": "cost-derivations#search-cost"
+    },
+    {
+      "operation": "Insert sorted keys into an unbalanced BST",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(N)",
+      "notes": "Each key descends to the rightmost node, producing a linked list of height N-1. Every later operation silently degrades to O(N).",
+      "derivation_ref": "cost-derivations#skew"
+    },
+    {
+      "operation": "Rebalance after insertion (AVL / red-black)",
+      "best_time": "O(1)",
+      "average_time": "O(log N)",
+      "worst_time": "O(log N)",
+      "space_complexity": "O(1)",
+      "notes": "Bounded rotations along the insertion path. This O(log N) per insert is the price paid to keep height at O(log N) and so keep lookups logarithmic.",
+      "derivation_ref": "cost-derivations#insertion"
     }
-  ]
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "The BST invariant makes each comparison discard exactly one subtree, so the search path never leaves the subtree containing the target and reaching a null link proves absence. In two-child deletion, replacing the node's key with its in-order successor's key preserves ordering relative to both subtrees, because the successor is the minimum of the right subtree."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Search cost equals the height H because each step follows one edge on a root-to-leaf path; since a height-H binary tree holds at most 2^(H+1) - 1 nodes, H is at least log2(N+1) - 1 for every binary tree, so O(log N) is optimal for balanced trees and O(N) for degenerate ones."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "O(log N) search is optimal among comparison-based binary trees because the height bound is structural. Order-preserving structures for fixed-width keys reach O(log log U) but pay space proportional to the universe, so the improvement is bought with memory rather than found."
+    }
+  }
 }

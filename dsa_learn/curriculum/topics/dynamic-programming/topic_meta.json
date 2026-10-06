@@ -1,0 +1,130 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Distinct state count for a two-index recurrence",
+      "best_time": "O(1)",
+      "average_time": "O(nm)",
+      "worst_time": "O(nm)",
+      "space_complexity": "O(nm)",
+      "notes": "A product of ranges, not a sum. This is the number DP actually pays for.",
+      "derivation_ref": "cost-derivations#state-space"
+    },
+    {
+      "operation": "Total time (states times cost per state)",
+      "best_time": "O(nm)",
+      "average_time": "O(nm)",
+      "worst_time": "O(nmk)",
+      "space_complexity": "O(nm)",
+      "notes": "k is the number of options examined per state. Both factors must be counted; k = 1 is the target.",
+      "derivation_ref": "cost-derivations#state-space"
+    },
+    {
+      "operation": "Naive recursion on the same recurrence",
+      "best_time": "Theta(1)",
+      "average_time": "O(phi^n)",
+      "worst_time": "O(phi^n)",
+      "space_complexity": "O(n)",
+      "notes": "phi is the golden ratio, about 1.618, for the Fibonacci recurrence. The ratio to O(nm) states is the entire value of DP.",
+      "derivation_ref": "cost-derivations#state-space"
+    },
+    {
+      "operation": "Full-table space",
+      "best_time": "O(nm)",
+      "average_time": "O(nm)",
+      "worst_time": "O(nm)",
+      "space_complexity": "O(nm)",
+      "notes": "One entry per state, retained for the whole run. The starting point for the rolling optimisation."
+    },
+    {
+      "operation": "Rolling-array space, lookback depth 1",
+      "best_time": "O(m)",
+      "average_time": "O(m)",
+      "worst_time": "O(m)",
+      "space_complexity": "O(m)",
+      "notes": "State (i,j) referencing only (i,j-1) needs a single row. Usually the largest practical win after fixing the state.",
+      "derivation_ref": "cost-derivations#space"
+    },
+    {
+      "operation": "Rolling-array space, lookback depth 2",
+      "best_time": "O(m)",
+      "average_time": "O(m)",
+      "worst_time": "O(m)",
+      "space_complexity": "O(m)",
+      "notes": "Two rows suffice when the recurrence references the previous row. Knapsack is the standard example."
+    },
+    {
+      "operation": "Knapsack with capacity bound W",
+      "best_time": "O(1)",
+      "average_time": "O(nW)",
+      "worst_time": "O(nW)",
+      "space_complexity": "O(W)",
+      "notes": "Pseudo-polynomial: polynomial in the maximum value, exponential in the input length when W is binary-encoded.",
+      "derivation_ref": "cost-derivations#space"
+    },
+    {
+      "operation": "Recursion depth of a top-down memoised solution",
+      "best_time": "O(1)",
+      "average_time": "O(n+m)",
+      "worst_time": "O(n+m)",
+      "space_complexity": "O(n+m)",
+      "notes": "Frames dominate stack usage. Deep state spaces can overflow, which is why bottom-up is the safer default.",
+      "derivation_ref": "cost-derivations#space"
+    },
+    {
+      "operation": "Top-down visited-state count on a partially reachable graph",
+      "best_time": "O(1)",
+      "average_time": "O(S)",
+      "worst_time": "O(S)",
+      "space_complexity": "O(S)",
+      "notes": "S is the number of reachable states, often far below the full state count. Top-down's one advantage over bottom-up.",
+      "derivation_ref": "cost-derivations#state-space"
+    },
+    {
+      "operation": "State explosion caused by an underspecified memo key",
+      "best_time": "O(1)",
+      "average_time": "O(S)",
+      "worst_time": "O(S)",
+      "space_complexity": "O(S)",
+      "notes": "If two calls share the key but differ in a relevant parameter, the cache fails to dedupe and cost is strictly worse than plain backtracking.",
+      "derivation_ref": "cost-derivations#state-space"
+    },
+    {
+      "operation": "Greedy alternative where an exchange argument exists",
+      "best_time": "O(1)",
+      "average_time": "O(E log E)",
+      "worst_time": "O(E log E)",
+      "space_complexity": "O(V)",
+      "notes": "Spanning trees, deadline scheduling and bipartite matching admit exchange proofs, so the DP table is wasted work.",
+      "derivation_ref": "cost-derivations#alternatives"
+    },
+    {
+      "operation": "Divide-and-conquer with non-overlapping subproblems",
+      "best_time": "O(n log n)",
+      "average_time": "O(n log n)",
+      "worst_time": "O(n log n)",
+      "space_complexity": "O(log n)",
+      "notes": "Merge sort touches each element once per level. Memoising would add a table for no dedupe benefit, so DP is the wrong tool.",
+      "derivation_ref": "cost-derivations#space"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Optimal substructure holds because substituting a cheaper sub-solution into an optimal whole would yield a cheaper valid whole, a contradiction. Correctness of the table follows by induction on the state measure: base cases are correct directly, and each computed state combines only correct dependencies. Optimality of the entry state follows because the recurrence minimises over every possible decomposition."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Cost is (number of states) times (cost per state): O(nm) states at O(1) transitions gives O(nm), against roughly phi^n calls in the naive recursion. Rolling arrays reduce space from O(nm) to O(m) whenever the lookback depth in one index is small.",
+      "detail": "Space reduction is only sound when the retained rows and the iteration direction together cover every dependency; the ascending-versus-descending choice in knapsack changes which items may be reused."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "No lower bound matching the DP state count is known, and the gap is structural: the state count is a property of the chosen recurrence rather than of the problem, so unlike sorting or graphs a DP's complexity cannot be called optimal. Knapsack is the concrete example, being NP-complete yet admitting an easy O(nW) DP whose bound is only pseudo-polynomial."
+    }
+  },
+  "supporting_structure": {
+    "name": "Memo Table over Sufficiently Specified States",
+    "native_to_technique": true,
+    "rationale": "The memo table is not a cache bolted onto recursion; it is the structure that defines the technique. Two properties are intrinsic. Soundness requires the state to be sufficient \u2014 two calls sharing the key must return the same value \u2014 because the algorithm's correctness rests entirely on never revisiting a state with a different correct answer. Efficiency requires the state to be minimal, since a key omitting no relevant parameter is what makes the count polynomial instead of exponential. Both requirements belong to the technique rather than to an auxiliary choice about it."
+  }
+}

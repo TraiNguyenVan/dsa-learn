@@ -78,6 +78,11 @@ class DSAHTTPRequestHandler(SimpleHTTPRequestHandler):
                 status, data = handlers.get_patterns_handler(query)
                 self._send_json(status, data)
                 return
+            # spec 006 R-012: derived coverage report backing the reference guide.
+            if path == "/api/curriculum/coverage":
+                status, data = handlers.get_coverage_handler()
+                self._send_json(status, data)
+                return
             if path.startswith("/api/curriculum/topics/"):
                 parts = path.split("/")
                 if len(parts) == 6 and parts[5] == "lesson":
@@ -158,6 +163,19 @@ class DSAHTTPRequestHandler(SimpleHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length", 0))
                 body_bytes = self.rfile.read(length) if length > 0 else b"{}"
                 status, data = handlers.post_visualizer_progress_handler(topic_id, body_bytes)
+                self._send_json(status, data)
+                return
+            # spec 006 FR-017: playback position for one (topic, operation) pair.
+            if len(parts) == 8 and parts[5] == "visualizer" and parts[6] == "playback":
+                topic_id = parts[4]
+                operation_id = parts[7]
+                if self.command == "GET":
+                    status, data = handlers.get_playback_handler(topic_id, operation_id, query)
+                    self._send_json(status, data)
+                    return
+                length = int(self.headers.get("Content-Length", 0))
+                body_bytes = self.rfile.read(length) if length > 0 else b"{}"
+                status, data = handlers.post_playback_handler(topic_id, operation_id, body_bytes)
                 self._send_json(status, data)
                 return
 

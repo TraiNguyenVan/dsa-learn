@@ -1,44 +1,126 @@
 {
   "complexity_matrix": [
     {
-      "operation": "Prepend (Insert Head)",
+      "operation": "Read or write one next / prev field",
       "best_time": "O(1)",
       "average_time": "O(1)",
       "worst_time": "O(1)",
       "space_complexity": "O(1)",
-      "notes": "Allocate node, set next to head, update head pointer."
+      "notes": "A single dereference: address computed from a base register, then loaded. No arithmetic in N and no search, independent of list length.",
+      "derivation_ref": "cost-derivations#pointer"
     },
     {
-      "operation": "Append with Tail Pointer",
+      "operation": "Prepend at head",
       "best_time": "O(1)",
       "average_time": "O(1)",
       "worst_time": "O(1)",
       "space_complexity": "O(1)",
-      "notes": "O(N) if no tail reference is maintained."
+      "notes": "Three pointer assignments and one allocation. O(1) regardless of N — the canonical constant-time mutation.",
+      "derivation_ref": "cost-derivations#surprise"
     },
     {
-      "operation": "Search by Value",
+      "operation": "Delete at head",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "head = head->next followed by freeing the old node. Reaching the head is free.",
+      "derivation_ref": "cost-derivations#surprise"
+    },
+    {
+      "operation": "Delete at a node whose predecessor is already held",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Rewire prev->next around curr, then free curr. The search for prev is excluded because the caller supplies it.",
+      "derivation_ref": "cost-derivations#surprise"
+    },
+    {
+      "operation": "Delete at an unknown index k",
+      "best_time": "O(1)",
+      "average_time": "O(k)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "The only reason singly-linked deletion can be linear: locating the predecessor costs k edges. This is a search cost, not a mutation cost.",
+      "derivation_ref": "cost-derivations#surprise"
+    },
+    {
+      "operation": "Append with a maintained tail pointer",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "tail->next = new; tail = new. Omitting the tail field silently degrades every append to O(N).",
+      "derivation_ref": "cost-derivations#surprise"
+    },
+    {
+      "operation": "Append without a maintained tail pointer",
       "best_time": "O(1)",
       "average_time": "O(N)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Must traverse nodes sequentially via next pointers."
+      "notes": "Must walk the whole list to find the end. Same class as the sort-precondition problem: the structure is capable of O(1), the implementation is not.",
+      "derivation_ref": "cost-derivations#pointer"
     },
     {
-      "operation": "Delete Known Node (Doubly Linked)",
+      "operation": "Access by index k",
       "best_time": "O(1)",
-      "average_time": "O(1)",
-      "worst_time": "O(1)",
+      "average_time": "O(k)",
+      "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Rewire next and prev pointers directly without scan."
+      "notes": "Random access does not exist on a list; k edges must be followed. k = 0 is O(1) by convention.",
+      "derivation_ref": "cost-derivations#pointer"
     },
     {
-      "operation": "Reversal (In-Place)",
+      "operation": "Full traversal or reverse",
       "best_time": "O(N)",
       "average_time": "O(N)",
       "worst_time": "O(N)",
       "space_complexity": "O(1)",
-      "notes": "Single pass pointer inversion with constant auxiliary space."
+      "notes": "Each of N nodes is visited once. In-place reversal needs only three pointers, so auxiliary space stays constant.",
+      "derivation_ref": "cost-derivations#pointer"
+    },
+    {
+      "operation": "Floyd cycle detection (slow +1, fast +2)",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Bounded by tail length plus one cycle length. O(1) space where a hash set of seen nodes would cost O(N) space.",
+      "derivation_ref": "cost-derivations#cycle"
+    },
+    {
+      "operation": "Space overhead per node",
+      "best_time": "Theta(1)",
+      "average_time": "Theta(1)",
+      "worst_time": "Theta(1)",
+      "space_complexity": "Theta(1)",
+      "notes": "8 bytes of next pointer on 64-bit for a singly-linked node, 16 for a doubly-linked one, plus allocator bookkeeping per independent allocation.",
+      "derivation_ref": "cost-derivations#locality"
+    },
+    {
+      "operation": "Cache misses during a sequential traversal",
+      "best_time": "O(1)",
+      "average_time": "O(N)",
+      "worst_time": "O(N)",
+      "space_complexity": "O(1)",
+      "notes": "Roughly one miss per node because allocations are scattered across the heap. Identical Theta(N) to a contiguous scan but an order of magnitude slower in wall-clock terms.",
+      "derivation_ref": "cost-derivations#locality"
     }
-  ]
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Every splice replaces a two-edge path prev -> curr -> curr->next with a single edge, so a walk from head visits exactly the same elements minus curr, and curr becomes unreachable and therefore safe to free. In reversal, saving next before overwriting curr->next is what prevents the untraversed suffix from being lost."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Pointer operations are O(1) because an address is computed rather than searched; every cost that depends on position is therefore the cost of locating that position, which is why append is O(1) with a tail pointer and O(N) without."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "Unordered search admits no improvement on Omega(N), so faster lookup requires maintaining order, which a balanced tree buys at O(log N) per insertion. Contiguity cannot be recovered, which caps the practical advantage of any pointer-based design."
+    }
+  }
 }

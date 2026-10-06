@@ -1,0 +1,142 @@
+{
+  "operations": [
+    {
+      "id": "bitwise_demo",
+      "name": "Bitwise Identities",
+      "description": "Shows each operand as its bit expansion so the identities are visible.",
+      "data_structure_type": "ARRAY",
+      "parameters": [
+        {
+          "name": "a",
+          "label": "A",
+          "type": "number",
+          "default_value": 12,
+          "min": 0,
+          "max": 999
+        },
+        {
+          "name": "b",
+          "label": "B",
+          "type": "number",
+          "default_value": 10,
+          "min": 0,
+          "max": 999
+        },
+        {
+          "name": "op",
+          "label": "Operation",
+          "type": "number",
+          "default_value": 0,
+          "min": 0,
+          "max": 5
+        }
+      ],
+      "presets": [
+        {
+          "name": "XOR",
+          "description": "a XOR b with distinct operands.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 12,
+            "b": 10,
+            "op": 0
+          }
+        },
+        {
+          "name": "Duplicate Operands Cancel Completely",
+          "description": "Boundary: a equals b, so a XOR a exhausts to 0 and the pair cancels entirely.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 12,
+            "b": 12,
+            "op": 0
+          }
+        },
+        {
+          "name": "AND",
+          "description": "a AND b: bits set in both.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 12,
+            "b": 10,
+            "op": 1
+          }
+        },
+        {
+          "name": "OR",
+          "description": "a OR b: bits set in either.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 12,
+            "b": 10,
+            "op": 2
+          }
+        },
+        {
+          "name": "Single Set Bit Cleared",
+          "description": "Boundary: one set bit, which a AND (a-1) removes entirely.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 8,
+            "b": 0,
+            "op": 4
+          }
+        },
+        {
+          "name": "Isolate Lowest Bit",
+          "description": "a AND -a: keeps only the lowest set bit.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 12,
+            "b": 0,
+            "op": 5
+          }
+        },
+        {
+          "name": "Empty Operand",
+          "description": "Boundary: a = 0, so there are no set bits to work with at all.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 0,
+            "b": 5,
+            "op": 4
+          }
+        },
+        {
+          "name": "Every Bit Set",
+          "description": "Boundary: all positions set across the display width.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "a": 63,
+            "b": 63,
+            "op": 1
+          }
+        }
+      ]
+    }
+  ]
+}

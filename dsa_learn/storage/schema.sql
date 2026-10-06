@@ -64,3 +64,17 @@ CREATE TABLE IF NOT EXISTS breakpoints (
 );
 
 CREATE INDEX IF NOT EXISTS idx_breakpoints_exercise ON breakpoints(exercise_id);
+
+-- Visualization playback position (spec 006, FR-017).
+-- Purely additive: this table writes no existing row and alters no existing
+-- column, so learner history cannot be lost by adding it. `total_steps` is
+-- stored alongside `last_step` so the client can detect a stale position after
+-- a generator changes its frame count and clamp rather than resume out of range.
+CREATE TABLE IF NOT EXISTS visualization_playback (
+    topic_id     TEXT NOT NULL,
+    operation_id TEXT NOT NULL,
+    last_step    INTEGER NOT NULL DEFAULT 0 CHECK(last_step >= 0),
+    total_steps  INTEGER NOT NULL DEFAULT 0 CHECK(total_steps >= 0),
+    updated_at   TEXT NOT NULL,
+    PRIMARY KEY (topic_id, operation_id)
+);

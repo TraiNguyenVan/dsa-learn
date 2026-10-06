@@ -3,7 +3,10 @@
     {
       "id": "two-pointers-opposite-ends",
       "title": "Opposite-End Two Pointers",
-      "topic_ids": ["arrays-hashing", "two-pointers"],
+      "topic_ids": [
+        "arrays-hashing",
+        "two-pointers"
+      ],
       "summary": "Converge left and right pointers towards the center to find pairs, partition elements, or reverse collections in linear time.",
       "trigger_cues": [
         "Array or string is sorted (or can be sorted in O(N log N))",
@@ -21,12 +24,24 @@
         "Off-by-one index with right = size vs right = size - 1",
         "Omitting pointer advance in branch causing an infinite loop"
       ],
-      "related_exercise_ids": ["two-sum-ii", "3sum", "container-with-most-water", "valid-palindrome"]
+      "related_exercise_ids": [
+        "two-sum-ii",
+        "3sum",
+        "container-with-most-water",
+        "valid-palindrome"
+      ],
+      "related_lesson_refs": [
+        "arrays-hashing:core-operations",
+        "arrays-hashing:correctness-argument"
+      ]
     },
     {
       "id": "sliding-window-variable",
       "title": "Dynamic Sliding Window",
-      "topic_ids": ["sliding-window", "arrays-hashing"],
+      "topic_ids": [
+        "sliding-window",
+        "arrays-hashing"
+      ],
       "summary": "Expand a contiguous window with a right pointer while contracting with a left pointer to satisfy a state invariant.",
       "trigger_cues": [
         "Subarray or substring contiguous range requirement",
@@ -44,12 +59,22 @@
         "Re-scanning window from scratch rather than updating incremental frequency diffs",
         "Failing to clean up map keys when frequency drops to 0"
       ],
-      "related_exercise_ids": ["longest-substring-without-repeating-characters", "best-time-to-buy-and-sell-stock", "longest-repeating-character-replacement"]
+      "related_exercise_ids": [
+        "longest-substring-without-repeating-characters",
+        "best-time-to-buy-and-sell-stock",
+        "longest-repeating-character-replacement"
+      ],
+      "related_lesson_refs": [
+        "sliding-window:core-operations",
+        "sliding-window:correctness-argument"
+      ]
     },
     {
       "id": "fast-and-slow-pointers",
       "title": "Fast & Slow Pointers (Floyd's Cycle Finding)",
-      "topic_ids": ["linked-lists"],
+      "topic_ids": [
+        "linked-lists"
+      ],
       "summary": "Move two pointers at different speeds (1x and 2x) across a linked list or cyclical sequence to detect cycles or locate midpoints in O(1) space.",
       "trigger_cues": [
         "Detect if a linked list or sequence contains a cycle",
@@ -67,12 +92,21 @@
         "Misidentifying midpoint for even-length lists (depending on slow/fast initialization)",
         "Overcomplicating with auxiliary hash sets when O(1) space is achievable"
       ],
-      "related_exercise_ids": ["linked-list-cycle", "reorder-list"]
+      "related_exercise_ids": [
+        "linked-list-cycle",
+        "reorder-list"
+      ],
+      "related_lesson_refs": [
+        "linked-lists:core-operations",
+        "linked-lists:correctness-argument"
+      ]
     },
     {
       "id": "monotonic-stack",
       "title": "Monotonic Stack",
-      "topic_ids": ["stack"],
+      "topic_ids": [
+        "stack"
+      ],
       "summary": "Maintain elements in a strictly increasing or decreasing order on a stack to resolve nearest greater/smaller element queries in linear time.",
       "trigger_cues": [
         "Find the next greater or smaller element for each index in an array",
@@ -90,12 +124,21 @@
         "Using strict < versus <= leading to duplicate values improperly grouped",
         "Assuming O(N^2) complexity because of nested while loop: each element enters and leaves once"
       ],
-      "related_exercise_ids": ["daily-temperatures", "trapping-rain-water"]
+      "related_exercise_ids": [
+        "daily-temperatures",
+        "trapping-rain-water"
+      ],
+      "related_lesson_refs": [
+        "stack:core-operations",
+        "stack:correctness-argument"
+      ]
     },
     {
       "id": "backtracking-dfs",
       "title": "State-Space Backtracking",
-      "topic_ids": ["trees"],
+      "topic_ids": [
+        "trees"
+      ],
       "summary": "Explore state candidates recursively and systematically undo state modifications (backtrack) upon encountering invalid states.",
       "trigger_cues": [
         "Generate all permutations, combinations, or partitions",
@@ -113,7 +156,353 @@
         "Missing base return condition leading to recursion stack overflow",
         "Failing to sort input array before handling duplicate candidates"
       ],
-      "related_exercise_ids": ["two-sum", "3sum"]
+      "related_exercise_ids": [
+        "two-sum",
+        "3sum"
+      ],
+      "related_lesson_refs": [
+        "trees:core-operations",
+        "trees:correctness-argument"
+      ]
+    },
+    {
+      "id": "binary-search-halving",
+      "title": "Binary Search and Search-Space Halving",
+      "topic_ids": [
+        "binary-search",
+        "arrays-hashing"
+      ],
+      "summary": "Halve a sorted search space one comparison at a time. The technique is not the loop but the invariant: the answer, if it exists, stays inside the current window.",
+      "trigger_cues": [
+        "The input is sorted, or can be sorted once and queried many times",
+        "The answer is a position or boundary, not just a boolean",
+        "A range query can be framed as finding the first index at or after a value",
+        "A sorted container exposes contiguous random access (array, not linked list)"
+      ],
+      "invariant_rules": [
+        "At every iteration, if the target exists, it exists inside [lo, hi)",
+        "Each branch discards only indices provably unable to hold the target",
+        "Exhausting the window (lo == hi) proves absence rather than merely failing to find it",
+        "Pick one boundary convention (half-open or closed) and use it consistently"
+      ],
+      "common_pitfalls": [
+        "Mixing a half-open window with a closed-window body, producing off-by-one errors that only appear at array edges",
+        "Using binary search over a linked list, which costs O(N log N) and is worse than a linear scan",
+        "Returning before checking whether the window ever emptied, so absence is reported as 'not found' without proof",
+        "Assuming the loop is O(1) because it has no inner loop, and forgetting that each probe is a memory access"
+      ],
+      "code_template_cpp": "// C++20 Binary Search Template\n#include <span>\n#include <optional>\n\ntemplate <class T>\nstd::optional<std::size_t> lower_bound(std::span<const T> a, T target) {\n    std::size_t lo = 0, hi = a.size();\n    while (lo < hi) {\n        const std::size_t mid = lo + (hi - lo) / 2;\n        if (a[mid] < target) { lo = mid + 1; } else { hi = mid; }\n    }\n    return lo == a.size() ? std::nullopt : std::optional<std::size_t>{lo};\n}\n",
+      "related_lesson_refs": [
+        "binary-search:core-operations",
+        "binary-search:correctness-argument",
+        "binary-search:limits"
+      ],
+      "related_exercise_ids": [
+        "two-sum",
+        "valid-anagram"
+      ]
+    },
+    {
+      "id": "hash-map-frequency",
+      "title": "Hash Map Frequency Counting",
+      "topic_ids": [
+        "arrays-hashing"
+      ],
+      "summary": "Trade an O(N) rescan for an O(1) lookup by counting as you go. The hash table does not answer range questions, so knowing when it is the wrong tool matters as much as knowing when to use it.",
+      "trigger_cues": [
+        "The question asks how many times something occurred",
+        "Pairs, anagrams, duplicates, or complements are involved",
+        "Order is irrelevant and only equality matters",
+        "The alphabet is small enough that a fixed-size table beats a hash map"
+      ],
+      "invariant_rules": [
+        "The count map always describes exactly the elements seen so far",
+        "Keys hash equal when they are equal, which is what makes lookup sound",
+        "Look for the complement *before* inserting the current element, or you will match an element with itself"
+      ],
+      "common_pitfalls": [
+        "Inserting first and querying second, which lets a single element pair with itself",
+        "Expecting sorted iteration or range queries from a hash table -- neither is supported at any price",
+        "Ignoring that the worst case is O(N) when all keys collide, which an attacker can induce deliberately",
+        "Using a hash table when the input is already sorted and range queries are needed"
+      ],
+      "code_template_cpp": "// C++20 Frequency Count Template\n#include <unordered_map>\n#include <vector>\n#include <optional>\n\nstd::optional<std::size_t> find_pair(std::span<const int> a, int target) {\n    std::unordered_map<int, std::size_t> seen;\n    for (std::size_t i = 0; i < a.size(); ++i) {\n        const int need = target - a[i];\n        if (auto it = seen.find(need); it != seen.end()) {\n            return it->second;\n        }\n        seen.emplace(a[i], i);\n    }\n    return std::nullopt;\n}\n",
+      "related_lesson_refs": [
+        "arrays-hashing:correctness-argument",
+        "arrays-hashing:limits"
+      ],
+      "related_exercise_ids": [
+        "contains-duplicate",
+        "group-anagrams",
+        "two-sum"
+      ]
+    },
+    {
+      "id": "heap-priority-queue",
+      "title": "Heap as a Priority Queue",
+      "topic_ids": [
+        "heap",
+        "graph-algorithms"
+      ],
+      "summary": "When the question is 'which one comes out next' over a changing set, a heap is the structure that mirrors it. It gives O(1) peek and O(log N) insert and delete, and nothing else.",
+      "trigger_cues": [
+        "The problem repeatedly asks for the smallest or largest remaining item",
+        "Dijkstra or Prim's frontier must expand by minimum key",
+        "Top-k or a running median over a stream",
+        "Several sorted sequences must be merged lazily"
+      ],
+      "invariant_rules": [
+        "Every parent is at or above (min-heap) its two children, and that is the only ordering guaranteed",
+        "The extreme value is always at index 0, with no search required",
+        "Push appends at the next free slot, which preserves the complete shape, then sifts up",
+        "Sift-down moves toward the *smaller* child, because moving toward the larger re-breaks the relation"
+      ],
+      "common_pitfalls": [
+        "Expecting the k-th smallest element in O(1) -- the heap supports only the extreme value",
+        "Building by repeated push (O(N log N)) when heapify is available (O(N))",
+        "Sift-down comparing against the larger child, which produces an invalid heap that still looks plausible",
+        "Merging two heaps directly, which costs O(N); a loser tree or balanced tree is the right structure"
+      ],
+      "code_template_cpp": "// C++20 Min-Heap Template\n#include <queue>\n#include <vector>\n\nclass MinHeap {\n    std::vector<int> a_;\n    void sift_up(std::size_t i) {\n        while (i > 0) {\n            const std::size_t p = (i - 1) / 2;\n            if (a_[p] <= a_[i]) break;\n            std::swap(a_[p], a_[i]); i = p;\n        }\n    }\n    void sift_down(std::size_t i) {\n        const std::size_t n = a_.size();\n        for (;;) {\n            const std::size_t l = 2 * i + 1, r = l + 1;\n            std::size_t m = i;\n            if (l < n && a_[l] < a_[m]) m = l;\n            if (r < n && a_[r] < a_[m]) m = r;\n            if (m == i) break;\n            std::swap(a_[m], a_[i]); i = m;\n        }\n    }\npublic:\n    void push(int v) { a_.push_back(v); sift_up(a_.size() - 1); }\n    int top() const { return a_.front(); }\n    int pop() {\n        const int out = a_.front();\n        a_.front() = a_.back(); a_.pop_back();\n        if (!a_.empty()) sift_down(0);\n        return out;\n    }\n    bool empty() const { return a_.empty(); }\n};\n",
+      "related_lesson_refs": [
+        "heap:correctness-argument",
+        "heap:cost-derivations"
+      ],
+      "related_exercise_ids": []
+    },
+    {
+      "id": "trie-prefix-reuse",
+      "title": "Trie and Prefix Reuse",
+      "topic_ids": [
+        "tries"
+      ],
+      "summary": "Store keys as shared prefixes rather than whole units. Prefix search then costs the same as membership, and lexicographic order falls out of traversal.",
+      "trigger_cues": [
+        "Many keys share a prefix, or questions ask about prefixes",
+        "Autocomplete, spell checking, or dictionary lookup",
+        "Lexicographic iteration over a set of strings",
+        "A small fixed alphabet where a fixed child array is affordable"
+      ],
+      "invariant_rules": [
+        "Following a key's characters from the root reaches a node if and only if the key is present",
+        "A key is complete exactly when the final node's terminal flag is set -- a successful walk alone is not enough",
+        "Shared prefixes are stored once, so node count tracks distinct prefixes rather than total key length"
+      ],
+      "common_pitfalls": [
+        "Conflating 'is a prefix of some key' with 'is a key', which is the classic trie bug",
+        "Forgetting to prune on delete, leaving orphaned nodes and leaking space",
+        "Assuming membership is faster than a hash map -- it is O(L) against O(1) expected",
+        "Using fixed fan-out over a large or sparse key set and wasting most of every node's child array"
+      ],
+      "code_template_cpp": "// C++20 Trie Template\n#include <array>\n#include <string>\n#include <optional>\n\nclass Trie {\n    struct Node {\n        std::array<int, 26> child{};\n        bool terminal = false;\n        Node() { child.fill(-1); }\n    };\n    std::vector<Node> nodes_{Node()};\npublic:\n    void insert(const std::string& s) {\n        int cur = 0;\n        for (char ch : s) {\n            const int c = ch - 'a';\n            if (nodes_[cur].child[c] == -1) {\n                nodes_[cur].child[c] = static_cast<int>(nodes_.size());\n                nodes_.emplace_back();\n            }\n            cur = nodes_[cur].child[c];\n        }\n        nodes_[cur].terminal = true;\n    }\n    bool contains(const std::string& s) const {\n        int cur = 0;\n        for (char ch : s) {\n            const int nxt = nodes_[cur].child[ch - 'a'];\n            if (nxt == -1) return false;\n            cur = nxt;\n        }\n        return nodes_[cur].terminal;\n    }\n    bool starts_with(const std::string& p) const {\n        int cur = 0;\n        for (char ch : p) {\n            const int nxt = nodes_[cur].child[ch - 'a'];\n            if (nxt == -1) return false;\n            cur = nxt;\n        }\n        return true;\n    }\n};\n",
+      "related_lesson_refs": [
+        "tries:correctness-argument",
+        "tries:cost-derivations"
+      ],
+      "related_exercise_ids": []
+    },
+    {
+      "id": "graph-traversal-family",
+      "title": "Choosing a Graph Traversal",
+      "topic_ids": [
+        "graphs",
+        "graph-algorithms"
+      ],
+      "summary": "Traversal order is a consequence of the algorithm, not of the data. The choice between BFS, DFS and Dijkstra is determined by the graph's model and by what is being asked.",
+      "trigger_cues": [
+        "Reachability, or shortest path measured in edge count",
+        "Cycle detection, topological order, or connected components",
+        "Cheapest route rather than fewest hops",
+        "The graph has negative weights, or may have them"
+      ],
+      "invariant_rules": [
+        "Every marked-visited vertex is genuinely reachable, and every reachable vertex is visited before termination",
+        "BFS processes in non-decreasing distance because it dequeues from the front",
+        "A topological order requires a DAG; no zero-in-degree vertex remaining is the cycle certificate",
+        "Dijkstra requires non-negative weights, because that is what makes an extracted distance final"
+      ],
+      "common_pitfalls": [
+        "Running Dijkstra on a graph with a negative edge, which returns a wrong answer rather than a slow one",
+        "Using BFS where weighted distance is required, silently returning the fewest-hops path",
+        "Attempting a topological sort on a cyclic graph and treating the stall as a bug rather than a proof",
+        "Forgetting that a visited set is a termination guarantee, not just an optimisation"
+      ],
+      "code_template_cpp": "// C++20 Traversal Selection Template\n#include <vector>\n#include <queue>\n#include <functional>\n\nstd::vector<int> bfs(const std::vector<std::vector<int>>& adj, int src) {\n    std::vector<bool> seen(adj.size(), false);\n    std::queue<int> q;\n    std::vector<int> order;\n    seen[src] = true; q.push(src);\n    while (!q.empty()) {\n        const int u = q.front(); q.pop();\n        order.push_back(u);\n        for (int v : adj[u]) if (!seen[v]) { seen[v] = true; q.push(v); }\n    }\n    return order;\n}\n",
+      "related_lesson_refs": [
+        "graph-algorithms:correctness-argument",
+        "graph-algorithms:limits",
+        "graphs:correctness-argument"
+      ],
+      "related_exercise_ids": [
+        "number-of-islands"
+      ]
+    },
+    {
+      "id": "dynamic-programming-memo",
+      "title": "Dynamic Programming with Memoisation",
+      "topic_ids": [
+        "dynamic-programming",
+        "graphs"
+      ],
+      "summary": "When subproblems repeat, the fix is to compute each once. The discipline is choosing a state that both suffices to determine the answer and minimises the state count.",
+      "trigger_cues": [
+        "The same subproblem is reachable by many different paths",
+        "Overlapping subproblems plus a provable optimal substructure",
+        "The naive recursion is exponential but the state space looks polynomial",
+        "Counting paths, subsets, or arrangements with constraints"
+      ],
+      "invariant_rules": [
+        "A state is sufficient only if two calls sharing it must return the same value",
+        "Every state is computed exactly once, after all of its dependencies",
+        "The recurrence references only strictly smaller states, so the measure decreases and recursion terminates",
+        "Bottom-up and memoised top-down produce identical results, differing only in which states are visited"
+      ],
+      "common_pitfalls": [
+        "Memorising on a state that omits a parameter the answer depends on, silently returning wrong answers",
+        "Using DP where the subproblems do not overlap, paying a table's cost for nothing",
+        "Failing to prove optimal substructure, as with greedy interval selection",
+        "Rolling arrays without matching the iteration direction, which quietly changes which items may be reused"
+      ],
+      "code_template_cpp": "// C++20 DP Template\n#include <vector>\n#include <algorithm>\n\n// 0/1 knapsack: maximise value with weight <= w.\nint knapsack(std::span<const int> weights, std::span<const int> values, int w) {\n    std::vector<int> dp(static_cast<std::size_t>(w) + 1, 0);\n    for (std::size_t i = 0; i < weights.size(); ++i) {\n        for (int c = w; c >= weights[i]; --c) {   // descending: each item once\n            dp[static_cast<std::size_t>(c)] = std::max(\n                dp[static_cast<std::size_t>(c)],\n                dp[static_cast<std::size_t>(c - weights[i])] + values[i]);\n        }\n    }\n    return dp[static_cast<std::size_t>(w)];\n}\n",
+      "related_lesson_refs": [
+        "dynamic-programming:correctness-argument",
+        "dynamic-programming:limits"
+      ],
+      "related_exercise_ids": []
+    },
+    {
+      "id": "backtracking-pruning",
+      "title": "Backtracking with Sound Pruning",
+      "topic_ids": [
+        "backtracking",
+        "graphs",
+        "trees"
+      ],
+      "summary": "Enumerate candidates incrementally and abandon a partial construction the moment it provably cannot lead to an answer. Pruning changes the constant in the exponent, not the exponent itself, so its soundness is a correctness property.",
+      "trigger_cues": [
+        "Constraints only become checkable as the solution is built",
+        "Every valid solution is wanted, not just the first",
+        "The candidates form a tree and local choices interact",
+        "N-queens, permutations under constraints, subset selection under capacity"
+      ],
+      "invariant_rules": [
+        "On entry to a call, state reflects exactly the decisions in the current path",
+        "Pruning may only discard a subtree that provably contains no solution",
+        "The undo at each level must restore state exactly, or later candidates are explored from a corrupted base",
+        "Apply, recurse, undo -- in that order"
+      ],
+      "common_pitfalls": [
+        "Pruning a branch that did contain a solution, which returns a wrong answer indistinguishable from a correct one",
+        "Forgetting the undo, or doing it before the recursion, which corrupts state several levels later",
+        "Recomputing the same subproblem instead of memoising -- when two paths reach one state, DP is the right tool",
+        "Enumerate when only one solution is needed, paying exponential cost for no extra correctness"
+      ],
+      "code_template_cpp": "// C++20 Backtracking Template\n#include <vector>\n#include <functional>\n\nvoid generate(std::vector<int>& cur, int target,\n              const std::function<void(std::vector<int>&)>& undo,\n              const std::function<void()>& recurse) {\n    // 1. base case  2. prune  3. try, recurse, undo\n    for (int v = 0; v <= target; ++v) {\n        if (v < 0 || v > target) continue;   // monotone: safe to skip\n        cur.push_back(v);\n        recurse();\n        cur.pop_back();   // undo exactly, after the recursion\n    }\n}\n",
+      "related_lesson_refs": [
+        "backtracking:correctness-argument",
+        "backtracking:cost-derivations",
+        "backtracking:limits"
+      ],
+      "related_exercise_ids": []
+    },
+    {
+      "id": "sorting-family-selection",
+      "title": "Choosing a Sort",
+      "topic_ids": [
+        "sorting",
+        "arrays-hashing"
+      ],
+      "summary": "Every comparison sort costs at least n log n, so the choice is about constants, space, stability and adaptivity -- not about beating the bound. Beating it requires leaving the comparison model.",
+      "trigger_cues": [
+        "Keys are integers in a small range, where counting or radix sort applies",
+        "Stability matters because equal keys carry different payloads",
+        "Worst-case guarantees are required, ruling out plain quicksort",
+        "Extra space is unavailable, ruling out mergesort"
+      ],
+      "invariant_rules": [
+        "Merge sort: both halves are sorted on entry, so emitting the smaller front element preserves order",
+        "Quicksort: after partitioning, every element at or before the pivot is at most the pivot",
+        "Counting sort: the prefix sum gives the exact count of keys below each key, so placement is arithmetic",
+        "A comparison sort needs n! distinct leaves, which is why n log n is a floor and not a target"
+      ],
+      "common_pitfalls": [
+        "Reaching for quicksort's expected behaviour without randomising the pivot, so sorted input degrades it to n squared",
+        "Using counting sort when the key range dwarfs the element count",
+        "Ignoring stability when equal keys carry differing metadata",
+        "Assuming the asymptotically optimal sort is the fastest -- heapsort has the worst memory pattern of any"
+      ],
+      "code_template_cpp": "// C++20 Sort Selection Template\n#include <algorithm>\n#include <numeric>\n#include <span>\n\n// Stable merge sort over a scratch buffer allocated once.\nvoid merge_sort(std::span<int> a, std::span<int> scratch) {\n    if (a.size() <= 1) return;\n    const std::size_t mid = a.size() / 2;\n    merge_sort(a.first(mid), scratch.first(mid));\n    merge_sort(a.subspan(mid), scratch.subspan(mid));\n    std::merge(a.begin(), a.begin() + static_cast<long>(mid),\n              a.begin() + static_cast<long>(mid), a.end(), scratch.begin());\n    std::copy(scratch.begin(), scratch.begin() + static_cast<long>(a.size()), a.begin());\n}\n",
+      "related_lesson_refs": [
+        "sorting:correctness-argument",
+        "sorting:limits"
+      ],
+      "related_exercise_ids": []
+    },
+    {
+      "id": "disjoint-set-union",
+      "title": "Disjoint-Set Union for Connectivity",
+      "topic_ids": [
+        "advanced-data-structures",
+        "graphs"
+      ],
+      "summary": "Near-constant connectivity queries under merge-only workloads. The technique is only valid offline, and the two optimisations are not optional.",
+      "trigger_cues": [
+        "Repeatedly merging groups and asking whether two elements are connected",
+        "Minimum spanning trees, redundant connection detection, connected components",
+        "The operations only ever merge; nothing is ever split",
+        "Queries are known in advance so results may be deferred to the end"
+      ],
+      "invariant_rules": [
+        "parent[x] == parent[y] if and only if x and y are in the same component",
+        "A union links only two distinct roots, so exactly two components merge",
+        "Path compression rewrites pointers within a tree and never moves an element between components",
+        "Union by rank keeps tree height at log n, since a depth increase implies a component at least doubled"
+      ],
+      "common_pitfalls": [
+        "Using it when edges are removed, which the merge-only restriction forbids; rollback union-find or a different structure is required",
+        "Omitting one of the two optimisations, which loses the alpha(n) bound and settles for O(log n)",
+        "Calling find for the answer without checking that the two elements are already connected before adding an edge",
+        "Assuming alpha(n) is O(1) as a formal claim; it is merely below 5 for any n that fits in memory"
+      ],
+      "code_template_cpp": "// C++20 Disjoint-Set Union Template\n#include <numeric>\n#include <vector>\n\nclass DisjointSet {\n    std::vector<int> parent_, rank_;\npublic:\n    explicit DisjointSet(int n) : parent_(n), rank_(n, 0) { std::iota(parent_.begin(), parent_.end(), 0); }\n    int find(int x) {\n        while (parent_[x] != x) { parent_[x] = parent_[parent_[x]]; x = parent_[x]; }\n        return x;\n    }\n    bool unite(int a, int b) {\n        a = find(a); b = find(b);\n        if (a == b) return false;            // already connected\n        if (rank_[a] < rank_[b]) std::swap(a, b);\n        parent_[b] = a;\n        if (rank_[a] == rank_[b]) ++rank_[a];\n        return true;\n    }\n};\n",
+      "related_lesson_refs": [
+        "advanced-data-structures:correctness-argument",
+        "advanced-data-structures:cost-derivations"
+      ],
+      "related_exercise_ids": []
+    },
+    {
+      "id": "bitwise-tricks",
+      "title": "Bit Manipulation and XOR Decomposition",
+      "topic_ids": [
+        "math-bitwise"
+      ],
+      "summary": "Treat the word as independent bit positions. Every operation is O(1) on a fixed width, so nothing here improves a complexity class -- only constants, by up to the word size.",
+      "trigger_cues": [
+        "A value occurs an even number of times except one, and it must be found",
+        "Parity, single-set-bit extraction, or power-of-two tests",
+        "A bounded index domain where a bitset beats a hash set",
+        "A range XOR or XOR-prefix query is needed"
+      ],
+      "invariant_rules": [
+        "x XOR x is zero and x XOR 0 is x, so even-multiplicity groups cancel and odd ones collapse to a copy",
+        "x AND (x - 1) clears exactly the lowest set bit, and is non-zero exactly when x is non-zero",
+        "Each mask operation affects exactly the positions its mask selects, because OR with 0, AND with 1 and XOR with 1 are all identity elsewhere",
+        "Signed shifts and 1 << 31 are undefined behaviour, so every bit routine takes unsigned"
+      ],
+      "common_pitfalls": [
+        "Applying 'XOR everything' when the precondition does not hold, producing a plausible number rather than an error",
+        "Using signed types, where a left shift into the sign bit is undefined rather than merely implementation-defined",
+        "Expecting a bit trick to make an exponential problem polynomial -- it cannot, because the operation count is unchanged",
+        "Treating a compound assignment as atomic under concurrency; it is a read-modify-write and loses updates"
+      ],
+      "code_template_cpp": "// C++20 Bit Manipulation Template (C++20 gives std::popcount / std::countr_zero)\n#include <bit>\n#include <cstdint>\n#include <optional>\n\nstd::optional<std::uint32_t> odd_element(std::span<const std::uint32_t> a) {\n    std::uint32_t acc = 0;\n    for (auto v : a) acc ^= v;\n    return acc;\n}\n\nint count_bits(std::uint32_t v) { return std::popcount(v); }\nint lowest_set_bit_index(std::uint32_t v) {\n    return v == 0 ? -1 : std::countr_zero(v);\n}\n",
+      "related_lesson_refs": [
+        "math-bitwise:correctness-argument",
+        "math-bitwise:cost-derivations",
+        "math-bitwise:limits"
+      ],
+      "related_exercise_ids": []
     }
   ],
   "decision_matrix": [

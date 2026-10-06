@@ -1,0 +1,120 @@
+{
+  "operations": [
+    {
+      "id": "merge_sort",
+      "name": "Merge Sort",
+      "description": "Splits to single elements, then merges sorted runs one comparison at a time.",
+      "data_structure_type": "ARRAY",
+      "parameters": [],
+      "presets": [
+        {
+          "name": "Mixed Values",
+          "description": "Unsorted input, the general case.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              2,
+              9,
+              1,
+              7
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Already Sorted",
+          "description": "Boundary: merges still run, so mergesort does not adapt.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Reverse Sorted",
+          "description": "Boundary: every merge takes the full run length.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: ties must break consistently to stay stable.",
+          "input": {
+            "kind": "list",
+            "values": [
+              4,
+              4,
+              4,
+              4
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Single Element",
+          "description": "Boundary: no merge is needed at all.",
+          "input": {
+            "kind": "list",
+            "values": [
+              7
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Two Elements",
+          "description": "Boundary: one merge of two length-1 runs.",
+          "input": {
+            "kind": "list",
+            "values": [
+              8,
+              3
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Empty Input",
+          "description": "Boundary: recursion terminates immediately, no merge runs.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {}
+        },
+        {
+          "name": "Complete Sort",
+          "description": "Boundary: the whole array sorted and the merge count reported, which is where the trace ends.",
+          "input": {
+            "kind": "list",
+            "values": [
+              4,
+              4,
+              2,
+              2,
+              9,
+              1
+            ]
+          },
+          "params": {}
+        }
+      ]
+    }
+  ]
+}

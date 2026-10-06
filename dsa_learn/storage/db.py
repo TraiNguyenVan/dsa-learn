@@ -385,6 +385,87 @@ def record_visualizer_operation(topic_id: str, operation_id: str, db_path: Path 
 
 
 # ---------------------------------------------------------------------------
+# Visualization playback position (spec 006, FR-017)
+#
+# Separate from `visualizer_progress` on purpose: that table answers "which
+# operations has this learner opened?", this one answers "where did they stop
+# inside an operation?". Mixing the two granularities in one JSON blob would make
+# neither queryable. Adding this table writes no existing row and alters no
+# existing column, so no learner history can be lost (FR-041).
+# ---------------------------------------------------------------------------
+
+
+def get_playback_position(
+    topic_id: str, operation_id: str, db_path: Path | None = None
+) -> dict[str, Any]:
+    """Retrieve the stored playback position for one (topic, operation) pair.
+
+    Returns `last_step: 0` when the operation has never been watched. When the
+    stored position is at or beyond the currently generated step count — which
+    happens after a generator changes how many frames it emits — the position is
+    reported as 0 so the client restarts rather than resuming out of range.
+    """
+    init_db(db_path)
+    conn = get_db(db_path)
+    try:
+        cur = conn.execute(
+            "SELECT last_step, total_steps FROM visualization_playback "
+            "WHERE topic_id = ? AND operation_id = ?",
+            (topic_id, operation_id),
+        )
+        row = cur.fetchone()
+        if not row:
+            return {"topic_id": topic_id, "operation_id": operation_id,
+                    "last_step": 0, "total_steps": 0}
+        last_step = int(row["last_step"])
+        stored_total = int(row["total_steps"])
+        # A generator that now emits fewer frames than when the position was
+        # stored makes the old index meaningless.
+        if stored_total > 0 and last_step >= stored_total:
+            last_step = 0
+        return {"topic_id": topic_id, "operation_id": operation_id,
+                "last_step": last_step, "total_steps": stored_total}
+    finally:
+        conn.close()
+
+
+def save_playback_position(
+    topic_id: str,
+    operation_id: str,
+    last_step: int,
+    total_steps: int,
+    db_path: Path | None = None,
+) -> dict[str, Any]:
+    """Persist the playback position for one (topic, operation) pair.
+
+    `last_step` is clamped to `[0, max(total_steps - 1, 0)]` so a stored index
+    can never point past the end of the generated frames. Writing one pair does
+    not affect any other row.
+    """
+    init_db(db_path)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    total_steps = max(0, int(total_steps))
+    max_step = max(0, total_steps - 1)
+    clamped = max(0, min(int(last_step), max_step))
+
+    conn = get_db(db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO visualization_playback "
+            "(topic_id, operation_id, last_step, total_steps, updated_at) "
+            "VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT(topic_id, operation_id) DO UPDATE SET "
+            "last_step = excluded.last_step, "
+            "total_steps = excluded.total_steps, "
+            "updated_at = excluded.updated_at",
+            (topic_id, operation_id, clamped, total_steps, now_iso),
+        )
+    conn.close()
+    return {"topic_id": topic_id, "operation_id": operation_id,
+            "last_step": clamped, "total_steps": total_steps}
+
+
+# ---------------------------------------------------------------------------
 # Debugger breakpoints (FR-011, FR-012)
 #
 # Rows carry a content anchor alongside the line number. Storing the line alone

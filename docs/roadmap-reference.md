@@ -19,18 +19,81 @@ This reference document establishes the architectural and pedagogical alignment 
 
 ---
 
-## 2. Current Curriculum Alignment (Starter Phase)
+## 2. Curriculum Coverage (generated)
 
-The 6 starter exercises included in `dsa-learn` directly cover foundational nodes from the roadmap.sh curriculum:
+> **Generated from `GET /api/curriculum/coverage`.** Every count below is computed
+> from files actually present rather than maintained by hand, so this table cannot
+> claim material the curriculum does not have. Regenerate with
+> `python3 tools/regenerate-reference.py`.
 
-| Topic | Roadmap.sh Node | Exercise ID | Difficulty | Time Target | Space Target | C++20 Header & Primitives |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Arrays & Hashing** | [Array](https://roadmap.sh/datastructures-and-algorithms) & [Hash Tables](https://roadmap.sh/datastructures-and-algorithms) | `two-sum` | Easy | $O(N)$ | $O(N)$ | `<vector>`, `<unordered_map>` |
-| **Arrays & Hashing** | [Dynamic Programming](https://roadmap.sh/datastructures-and-algorithms) / Kadane | `max-subarray` | Medium | $O(N)$ | $O(1)$ | `<vector>`, `<algorithm>`, `std::max` |
-| **Two Pointers** | [Two Pointer Technique](https://roadmap.sh/datastructures-and-algorithms) | `valid-palindrome` | Easy | $O(N)$ | $O(1)$ | `<string>`, `<cctype>`, converging index pointers |
-| **Linked Lists** | [Linked Lists](https://roadmap.sh/datastructures-and-algorithms) | `reverse-linked-list` | Easy | $O(N)$ | $O(1)$ | Struct node pointer swapping, iterative 3-pointer |
-| **Trees** | [Tree Data Structures](https://roadmap.sh/datastructures-and-algorithms) & [Tree Traversal](https://roadmap.sh/datastructures-and-algorithms) | `invert-binary-tree` | Easy | $O(N)$ | $O(H)$ | Binary tree DFS traversal, `std::swap` |
-| **Dynamic Programming** | [Recursion](https://roadmap.sh/datastructures-and-algorithms) & [Dynamic Programming](https://roadmap.sh/datastructures-and-algorithms) | `climbing-stairs` | Easy | $O(N)$ | $O(1)$ | State transitions, Fibonacci reduction, $O(1)$ space |
+| | |
+| :-- | --: |
+| Topics | **16** |
+| Exercises | **52** |
+| &nbsp;&nbsp;of which problem exercises | 52 |
+| &nbsp;&nbsp;of which implementation exercises | 0 |
+| Topics with an authored lesson | **16** |
+| Topics still showing placeholder lesson text | **0** |
+| Topics with the full theory standard (correctness + derivations + limits) | **16** |
+| Topics with a cost table | **16** |
+| Topics with at least one animation | **16** |
+| Declared animation operations | **20** |
+| Topics with an implementation exercise | 0 |
+| Pattern blueprints | 15 |
+
+### Per-Topic Material Set
+
+| # | Topic ID | Title | Lesson | Lesson words | Cost table | Animation | Exercises | Prerequisites |
+| --: | :-- | :-- | :-- | --: | :-- | :-- | --: | :-- |
+| 1 | `arrays-hashing` | Arrays & Hashing | yes | 1,729 | yes | 1 (hash_bucket_insert) | 7 | — |
+| 2 | `two-pointers` | Two Pointers | yes | 1,496 | yes | 1 (two_sum) | 5 | arrays-hashing, binary-search |
+| 3 | `sliding-window` | Sliding Window | yes | 1,903 | yes | 1 (longest_unique_window) | 4 | arrays-hashing, two-pointers |
+| 4 | `stack` | Stack | yes | 1,983 | yes | 2 (monotonic_stack, fifo_queue) | 4 | arrays-hashing |
+| 5 | `binary-search` | Binary Search | yes | 2,184 | yes | 1 (binary_search) | 4 | arrays-hashing |
+| 6 | `linked-lists` | Linked Lists | yes | 1,679 | yes | 2 (insert_head, reverse_list) | 6 | — |
+| 7 | `trees` | Trees & Binary Search Trees | yes | 1,725 | yes | 2 (bst_search, bst_insert) | 6 | arrays-hashing, linked-lists |
+| 8 | `tries` | Tries (Prefix Trees) | yes | 2,149 | yes | 1 (trie_insert_search) | 2 | arrays-hashing |
+| 9 | `heap` | Heap & Priority Queue | yes | 2,494 | yes | 1 (heap_insert) | 3 | arrays-hashing |
+| 10 | `backtracking` | Backtracking | yes | 2,140 | yes | 1 (pruned_pair_search) | 3 | stack, trees |
+| 11 | `graphs` | Graphs | yes | 2,367 | yes | 1 (bfs_traversal) | 4 | linked-lists, trees |
+| 12 | `dynamic-programming` | Dynamic Programming | yes | 2,177 | yes | 1 (dp_table_fill) | 4 | arrays-hashing, backtracking |
+| 13 | `sorting` | Sorting | yes | 2,026 | yes | 1 (merge_sort) | 0 | arrays-hashing |
+| 14 | `graph-algorithms` | Graph Algorithms | yes | 2,041 | yes | 1 (topological_sort) | 0 | graphs |
+| 15 | `advanced-data-structures` | Advanced Data Structures | yes | 2,245 | yes | 2 (union_find, segment_tree_query) | 0 | trees, heap, arrays-hashing |
+| 16 | `math-bitwise` | Math and Bitwise Techniques | yes | 2,451 | yes | 1 (bitwise_demo) | 0 | — |
+
+### Pattern Recognition Coverage
+
+16 of 16 topics are reachable from at least one pattern blueprint. A pattern supplies trigger cues (how to
+spot the problem), invariant rules (what makes the technique correct), and common
+pitfalls (how it actually goes wrong) — the recognition layer that has to come
+before the technique can be applied.
+
+| Pattern | Covers topics |
+| :-- | :-- |
+| `backtracking-dfs` | `trees` |
+| `backtracking-pruning` | `backtracking`, `graphs`, `trees` |
+| `binary-search-halving` | `binary-search`, `arrays-hashing` |
+| `bitwise-tricks` | `math-bitwise` |
+| `disjoint-set-union` | `advanced-data-structures`, `graphs` |
+| `dynamic-programming-memo` | `dynamic-programming`, `graphs` |
+| `fast-and-slow-pointers` | `linked-lists` |
+| `graph-traversal-family` | `graphs`, `graph-algorithms` |
+| `hash-map-frequency` | `arrays-hashing` |
+| `heap-priority-queue` | `heap`, `graph-algorithms` |
+| `monotonic-stack` | `stack` |
+| `sliding-window-variable` | `sliding-window`, `arrays-hashing` |
+| `sorting-family-selection` | `sorting`, `arrays-hashing` |
+| `trie-prefix-reuse` | `tries` |
+| `two-pointers-opposite-ends` | `arrays-hashing`, `two-pointers` |
+
+### What Is Not Yet Covered
+
+- **Implementation exercises**: 16 of 16 topics have no `kind: "implementation"` exercise yet. Theory and animation are
+  complete for all 16; the build-it-yourself loop is the remaining gap.
+- **Problem exercises are intentionally not growing.** This curriculum's scope is theory,
+  cost derivations, and visualization; problem-exercise count is frozen at
+  52 by design, not by omission.
 
 ---
 

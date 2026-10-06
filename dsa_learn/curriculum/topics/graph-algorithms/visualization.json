@@ -1,0 +1,187 @@
+{
+  "operations": [
+    {
+      "id": "topological_sort",
+      "name": "Topological Sort (Kahn)",
+      "description": "Emits vertices only at in-degree zero, and reports the cycle when none remain.",
+      "data_structure_type": "GRAPH",
+      "parameters": [],
+      "presets": [
+        {
+          "name": "DAG Course Order",
+          "description": "6 vertices, acyclic, every vertex reachable from the source.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f"
+            ],
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "a",
+                "c"
+              ],
+              [
+                "b",
+                "d"
+              ],
+              [
+                "c",
+                "d"
+              ],
+              [
+                "d",
+                "e"
+              ],
+              [
+                "e",
+                "f"
+              ]
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Cyclic",
+          "description": "Boundary: a cycle, so no topological order exists.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "a",
+              "b",
+              "c"
+            ],
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "b",
+                "c"
+              ],
+              [
+                "c",
+                "a"
+              ]
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Single Vertex",
+          "description": "Boundary: one vertex, no edges, trivially ordered.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "a"
+            ],
+            "edges": []
+          },
+          "params": {}
+        },
+        {
+          "name": "Empty Graph",
+          "description": "Boundary: no vertices, so the order is empty.",
+          "input": {
+            "kind": "graph",
+            "nodes": [],
+            "edges": []
+          },
+          "params": {}
+        },
+        {
+          "name": "Duplicate Edges",
+          "description": "Boundary: parallel edges, which raise in-degree without adding order.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "a",
+              "b",
+              "c"
+            ],
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "a",
+                "b"
+              ],
+              [
+                "b",
+                "c"
+              ]
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "Disconnected Components",
+          "description": "Boundary: two independent chains that must both be emitted.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "edges": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "c",
+                "d"
+              ]
+            ]
+          },
+          "params": {}
+        },
+        {
+          "name": "All Same In-Degree",
+          "description": "Boundary: a wide level of independent vertices, so emission order is unconstrained.",
+          "input": {
+            "kind": "graph",
+            "nodes": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "edges": [
+              [
+                "a",
+                "e"
+              ],
+              [
+                "b",
+                "e"
+              ],
+              [
+                "c",
+                "e"
+              ],
+              [
+                "d",
+                "e"
+              ]
+            ]
+          },
+          "params": {}
+        }
+      ]
+    }
+  ]
+}

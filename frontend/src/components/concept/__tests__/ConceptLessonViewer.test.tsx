@@ -28,6 +28,9 @@ const LESSON: ConceptLesson = {
   topic_id: 'arrays-hashing',
   title: 'Arrays & Hashing',
   summary: 'Comprehensive conceptual guide and complexity analysis.',
+  // spec 006: both fields are always present on the lesson endpoint (H-04).
+  is_placeholder: false,
+  prerequisites: [],
   sections: [
     {
       id: 'memory-anatomy-layout',

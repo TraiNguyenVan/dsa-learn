@@ -1,0 +1,134 @@
+{
+  "complexity_matrix": [
+    {
+      "operation": "Peek (read the extreme element)",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "One array read at index 0. Optimal: any structure reporting an extreme must at least look."
+    },
+    {
+      "operation": "Push with sift-up",
+      "best_time": "O(1)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "O(1)",
+      "notes": "Walks one path from the new leaf to the root, each step O(1). Bound equals the tree height.",
+      "derivation_ref": "cost-derivations#percolation"
+    },
+    {
+      "operation": "Pop with sift-down",
+      "best_time": "O(log n)",
+      "average_time": "O(log n)",
+      "worst_time": "O(log n)",
+      "space_complexity": "O(1)",
+      "notes": "Same length path in the opposite direction, choosing the smaller child at each step. The choice is required for correctness.",
+      "derivation_ref": "cost-derivations#percolation"
+    },
+    {
+      "operation": "Build heapify from an unsorted array (bottom-up)",
+      "best_time": "O(n)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(1)",
+      "notes": "Sifts each of the n/2 internal nodes. Nodes at height h number at most n/2^(h+1), so summing O(h) over them converges to O(n).",
+      "derivation_ref": "cost-derivations#build"
+    },
+    {
+      "operation": "Build by repeated push",
+      "best_time": "O(n)",
+      "average_time": "O(n log n)",
+      "worst_time": "O(n log n)",
+      "space_complexity": "O(1)",
+      "notes": "The comparison against heapify: same result, worse construction cost, because heapify exploits the geometric node distribution.",
+      "derivation_ref": "cost-derivations#build"
+    },
+    {
+      "operation": "Repeated pop to produce sorted output (heapsort)",
+      "best_time": "O(n)",
+      "average_time": "O(n log n)",
+      "worst_time": "O(n log n)",
+      "space_complexity": "O(1)",
+      "notes": "n pops at O(log n) each. Equals the comparison-sort lower bound while also supporting O(1) peek, which is the heap's actual contribution.",
+      "derivation_ref": "cost-derivations#repeated"
+    },
+    {
+      "operation": "Tree height of a complete heap of n elements",
+      "best_time": "Omega(1)",
+      "average_time": "Theta(log n)",
+      "worst_time": "Theta(log n)",
+      "space_complexity": "O(1)",
+      "notes": "A complete tree of height h holds at least 2^h elements, so h = floor(log2 n). This is the source of every logarithmic bound here.",
+      "derivation_ref": "cost-derivations#percolation"
+    },
+    {
+      "operation": "k-th smallest element",
+      "best_time": "O(1)",
+      "average_time": "O(k)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(k)",
+      "notes": "The heap invariant constrains only parent against children, so no rank query is supported. A breadth-first descent to depth k is the cheapest available approach.",
+      "derivation_ref": "cost-derivations#smallest"
+    },
+    {
+      "operation": "Membership test for an arbitrary value",
+      "best_time": "O(1)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(1)",
+      "notes": "No range or membership support follows from a partial order. This is why a heap cannot replace a sorted container.",
+      "derivation_ref": "cost-derivations#costs"
+    },
+    {
+      "operation": "Merge two arbitrary heaps",
+      "best_time": "O(1)",
+      "average_time": "O(n)",
+      "worst_time": "O(n)",
+      "space_complexity": "O(n)",
+      "notes": "Unlike a list, there is no cheap way to find the smaller minimum without restructuring. Heaps are not composable.",
+      "derivation_ref": "cost-derivations#costs"
+    },
+    {
+      "operation": "Cache locality of a sift-down path",
+      "best_time": "O(1)",
+      "average_time": "O(1)",
+      "worst_time": "O(1)",
+      "space_complexity": "O(1)",
+      "notes": "Access pattern is the worst of any comparison sort: distant cache lines per step. This is why introsort switches away from heapsort despite its optimal bound."
+    },
+    {
+      "operation": "Total space for n keys",
+      "best_time": "Theta(n)",
+      "average_time": "Theta(n)",
+      "worst_time": "Theta(n)",
+      "space_complexity": "Theta(n)",
+      "notes": "One flat array, no per-node pointers. Strictly smaller than a node-based tree, which pays three pointers per node."
+    },
+    {
+      "operation": "Lookup with bounded-integer priorities (bucket or radix)",
+      "best_time": "O(1)",
+      "average_time": "O(n + U)",
+      "worst_time": "O(n + U)",
+      "space_complexity": "O(n + U)",
+      "notes": "U is the priority range. Beats log n when the range is manageable, which shows comparison lower bounds are model-relative rather than absolute.",
+      "derivation_ref": "cost-derivations#outside"
+    }
+  ],
+  "theory_claims": {
+    "correctness_argument": {
+      "section_ref": "correctness-argument",
+      "claim": "Push can violate only the parent relation at one known position and sift-up repairs exactly that; pop can violate only relations involving the new root and sift-down repairs them by moving toward the smaller child, since swapping with the larger would re-break the relation just fixed."
+    },
+    "cost_derivations": {
+      "section_ref": "cost-derivations",
+      "claim": "Cost equals height, and a complete tree of height h holds at least 2^h elements so h = floor(log2 n), giving O(log n) per percolation. Bulk heapify is O(n) rather than O(n log n) because internal nodes at height h number at most n/2^(h+1), and the geometric factor dominates the linear factor in the sum.",
+      "detail": "Repeated pop is O(n log n), which matches the comparison-sort lower bound."
+    },
+    "limits": {
+      "section_ref": "limits",
+      "claim": "Omega(n log n) is a lower bound for producing sorted output in the comparison model because n! orderings must be distinguished, and heapsort attains it. The heap's contribution is attaining that bound while also supporting O(1) peek and O(log n) insert and delete; no structure does both.",
+      "detail": "Comparison bounds are model-relative: bounded-integer priorities admit linear-time bucket structures, so the log n result is not universal."
+    }
+  }
+}

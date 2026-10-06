@@ -1,0 +1,141 @@
+{
+  "operations": [
+    {
+      "id": "binary_search",
+      "name": "Binary Search",
+      "description": "Halves a sorted search window one comparison at a time.",
+      "data_structure_type": "ARRAY",
+      "parameters": [
+        {
+          "name": "target",
+          "label": "Target",
+          "type": "number",
+          "default_value": 23,
+          "min": -999,
+          "max": 999
+        }
+      ],
+      "presets": [
+        {
+          "name": "Target Present",
+          "description": "Target sits mid-window.",
+          "input": {
+            "kind": "list",
+            "values": [
+              2,
+              5,
+              8,
+              12,
+              16,
+              23,
+              38,
+              56,
+              72,
+              91
+            ]
+          },
+          "params": {
+            "target": 23
+          }
+        },
+        {
+          "name": "Target Missing",
+          "description": "Search exhausts the window.",
+          "input": {
+            "kind": "list",
+            "values": [
+              2,
+              5,
+              8,
+              12,
+              16,
+              23,
+              38
+            ]
+          },
+          "params": {
+            "target": 15
+          }
+        },
+        {
+          "name": "Boundary Head",
+          "description": "Target is the first element.",
+          "input": {
+            "kind": "list",
+            "values": [
+              10,
+              20,
+              30,
+              40,
+              50
+            ]
+          },
+          "params": {
+            "target": 10
+          }
+        },
+        {
+          "name": "Single Element",
+          "description": "Boundary: one-element window.",
+          "input": {
+            "kind": "list",
+            "values": [
+              7
+            ]
+          },
+          "params": {
+            "target": 7
+          }
+        },
+        {
+          "name": "Empty Array",
+          "description": "Boundary: nothing to search.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "target": 5
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: every value identical.",
+          "input": {
+            "kind": "list",
+            "values": [
+              4,
+              4,
+              4,
+              4,
+              4
+            ]
+          },
+          "params": {
+            "target": 4
+          }
+        },
+        {
+          "name": "Already Sorted",
+          "description": "Sorted input converges immediately.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ]
+          },
+          "params": {
+            "target": 8
+          }
+        }
+      ]
+    }
+  ]
+}

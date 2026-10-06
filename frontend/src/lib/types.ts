@@ -8,7 +8,12 @@ export interface ExerciseSummary {
   slug: string;
   title: string;
   difficulty: Difficulty;
+  /** Marks a from-scratch implementation exercise; drives FoundationBadge. */
   is_foundation?: boolean;
+  /** Defaults to "problem" server-side (contract E-01). */
+  kind?: 'problem' | 'implementation';
+  /** Per-operation labels evaluated individually for implementation exercises. */
+  components?: string[];
   time_complexity_target: string;
   space_complexity_target: string;
   status: ExerciseStatus;
@@ -283,6 +288,11 @@ export interface ConceptLesson {
   topic_id: string;
   title: string;
   summary: string;
+  /** spec 006 FR-001: true when the generic fallback stands in for an
+   *  un-authored lesson. Drives the visible notice and suppresses credit. */
+  is_placeholder: boolean;
+  /** spec 006 FR-004: topic ids this lesson builds on. Always present. */
+  prerequisites: string[];
   sections: LessonSection[];
   complexity_matrix: ComplexityEntry[];
   reading_progress: LessonReadingProgress;
@@ -299,15 +309,30 @@ export type ActionType =
   | 'TRAVERSE'
   | 'SPLIT'
   | 'MERGE'
-  | 'BALANCE';
+  | 'BALANCE'
+  // spec 006: actions the new visual styles need (research R-004).
+  | 'EXPAND'    // a traversal frontier grows by a node
+  | 'VISIT'     // a node is consumed / settled
+  | 'RECURSE'   // a backtracking call descends
+  | 'BACKTRACK' // a backtracking call returns
+  | 'PRUNE'     // a branch is abandoned, with a reason
+  | 'WRITE'     // a table cell is filled from its dependency
+  | 'EXHAUST';  // the search space is exhausted; the algorithm terminates
 
 export type DataStructureType =
   | 'ARRAY'
   | 'LINKED_LIST'
-  | 'STACK_QUEUE'
+  // spec 006: STACK_QUEUE is split. A queue cannot demonstrate a monotonic
+  // stack's invariant, so a single type cannot honestly serve both subjects
+  // (research R-004).
+  | 'STACK'
+  | 'QUEUE'
   | 'BINARY_SEARCH_TREE'
   | 'HEAP'
-  | 'GRAPH';
+  | 'GRAPH'
+  | 'TRIE'
+  | 'DP_TABLE'
+  | 'BACKTRACK';
 
 export interface ArrayElementState {
   value: number | string;
@@ -355,11 +380,94 @@ export interface HeapElementState {
   is_highlighted: boolean;
 }
 
+// --- spec 006: state shapes for the new visual styles (research R-004) ---
+// Each shape is self-describing so its renderer needs no branching on a
+// discriminator, and so every subject is drawn in a layout suited to it rather
+// than forced into an array or tree (FR-012).
+
+export interface GraphNodeState {
+  id: string;
+  label: string;
+  /** Deterministic layered layout: assigned by the generator from traversal
+   *  depth, never by a force simulation (research R-003). */
+  x: number;
+  y: number;
+  /** `covered`/`partial` are segment-tree specific: a range query marks a node
+   *  fully covered, partially overlapping, or excluded from the query. */
+  status?: 'default' | 'frontier' | 'visited' | 'active' | 'exhausted' | 'covered' | 'partial' | 'excluded';
+}
+
+export interface GraphEdgeState {
+  from: string;
+  to: string;
+  weight?: number;
+  status?: 'default' | 'traversed' | 'discarded';
+}
+
+export interface GraphState {
+  nodes: GraphNodeState[];
+  edges: GraphEdgeState[];
+  /** Nodes discovered but not yet expanded. */
+  frontier: string[];
+  /** Nodes already settled; makes re-entry impossible. */
+  visited: string[];
+  active_node_id: string | null;
+}
+
+export interface TrieNodeState {
+  id: string;
+  char: string;
+  depth: number;
+  is_terminal: boolean;
+  child_ids: string[];
+}
+
+export interface TrieState {
+  nodes: TrieNodeState[];
+  active_node_id: string | null;
+}
+
+export interface DpTableState {
+  rows: string[];
+  cols: string[];
+  cells: Array<Array<number | null>>;
+  active_cell: [number, number] | null;
+  /** Inclusive cell range the current computation depends on. */
+  active_range: [number, number, number, number] | null;
+}
+
+export interface BacktrackState {
+  /** Nodes on the current recursion path, root first. */
+  path: string[];
+  /** Nodes whose subtree has been fully explored. */
+  explored: string[];
+  /** Nodes abandoned, with the reason the branch was pruned. */
+  pruned: Array<{ node: string; reason: string }>;
+  active_node_id: string | null;
+}
+
+export interface StackState {
+  /** Index 0 is the bottom of the stack. */
+  entries: Array<{ value: number | string; label?: string }>;
+  popped: Array<{ value: number | string; label?: string }>;
+}
+
+export interface QueueState {
+  entries: Array<{ value: number | string; label?: string }>;
+  dequeued: Array<{ value: number | string; label?: string }>;
+}
+
 export interface VisualizerStateFrame {
   step_index: number;
   total_steps: number;
   action_type: ActionType;
+  /** What changed at this step. */
   description: string;
+  /** Why that change follows. Required and non-empty: FR-009 requires
+   *  narration that explains the reasoning, and a separate field is what makes
+   *  that mechanically checkable rather than a matter of taste (research R-005).
+   *  A rationale that merely restates `description` still fails review (F-04). */
+  rationale: string;
   data_structure_type: DataStructureType;
   array_state?: {
     elements: ArrayElementState[];
@@ -377,6 +485,12 @@ export interface VisualizerStateFrame {
     elements: HeapElementState[];
     swapping_indices: [number, number] | null;
   };
+  stack_state?: StackState;
+  queue_state?: QueueState;
+  graph_state?: GraphState;
+  trie_state?: TrieState;
+  dp_table_state?: DpTableState;
+  backtrack_state?: BacktrackState;
 }
 
 export interface VisualizerOperation {

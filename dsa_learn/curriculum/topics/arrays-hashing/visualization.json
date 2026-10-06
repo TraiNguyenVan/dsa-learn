@@ -1,0 +1,143 @@
+{
+  "operations": [
+    {
+      "id": "hash_bucket_insert",
+      "name": "Hash Table Insert (Buckets and Collisions)",
+      "description": "Places keys by key mod bucket count and surfaces every collision.",
+      "data_structure_type": "ARRAY",
+      "parameters": [
+        {
+          "name": "buckets",
+          "label": "Bucket Count",
+          "type": "number",
+          "default_value": 5,
+          "min": 1,
+          "max": 24
+        }
+      ],
+      "presets": [
+        {
+          "name": "Mixed Keys",
+          "description": "Some collisions, some buckets empty.",
+          "input": {
+            "kind": "list",
+            "values": [
+              5,
+              12,
+              3,
+              17,
+              8
+            ]
+          },
+          "params": {
+            "buckets": 5
+          }
+        },
+        {
+          "name": "Every Key Collides",
+          "description": "Boundary: all keys land in one bucket, the O(N) worst case.",
+          "input": {
+            "kind": "list",
+            "values": [
+              2,
+              7,
+              12,
+              17
+            ]
+          },
+          "params": {
+            "buckets": 5
+          }
+        },
+        {
+          "name": "No Collisions",
+          "description": "Boundary: hash is effectively a perfect permutation here.",
+          "input": {
+            "kind": "list",
+            "values": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "params": {
+            "buckets": 4
+          }
+        },
+        {
+          "name": "All Duplicates",
+          "description": "Boundary: identical keys, so the same bucket every time.",
+          "input": {
+            "kind": "list",
+            "values": [
+              7,
+              7,
+              7,
+              7
+            ]
+          },
+          "params": {
+            "buckets": 5
+          }
+        },
+        {
+          "name": "Single Key",
+          "description": "Boundary: one insert, no collisions possible.",
+          "input": {
+            "kind": "list",
+            "values": [
+              9
+            ]
+          },
+          "params": {
+            "buckets": 5
+          }
+        },
+        {
+          "name": "Empty Input",
+          "description": "Boundary: table allocated but nothing stored.",
+          "input": {
+            "kind": "list",
+            "values": []
+          },
+          "params": {
+            "buckets": 5
+          }
+        },
+        {
+          "name": "Single Bucket",
+          "description": "Boundary: one bucket forces a chain by construction.",
+          "input": {
+            "kind": "list",
+            "values": [
+              3,
+              9,
+              15
+            ]
+          },
+          "params": {
+            "buckets": 1
+          }
+        },
+        {
+          "name": "Exhausted Buckets",
+          "description": "Boundary: every bucket occupied, load factor exactly 1.0.",
+          "input": {
+            "kind": "list",
+            "values": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "params": {
+            "buckets": 5
+          }
+        }
+      ]
+    }
+  ]
+}
