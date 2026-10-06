@@ -127,6 +127,52 @@
           "solution_relpath": "dsa_learn/curriculum/topics/arrays-hashing/product-of-array-except-self/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/arrays-hashing/product-of-array-except-self/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-dynamic-array",
+          "slug": "design-dynamic-array",
+          "title": "Design a Dynamic Array (Vector)",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) amortized append, O(1) random access",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/arrays-hashing/design-dynamic-array/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/arrays-hashing/design-dynamic-array/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/arrays-hashing/design-dynamic-array/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/arrays-hashing/design-dynamic-array/problem.md",
+          "components": [
+            "constructor",
+            "push_back",
+            "pop_back",
+            "get",
+            "set",
+            "size",
+            "capacity",
+            "resizes",
+            "destroy"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Two variables, not one: `length` is how many elements are stored, `capacity` is how many the buffer holds. They are equal exactly once per doubling, and that is the entire amortized argument."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. Allocate the buffer on the heap in the constructor and remember the requested capacity.\n2. In `push_back`, when `length == capacity`, allocate a buffer of twice the capacity, copy the live elements across, release the old buffer, and bump the resize counter.\n3. `get` and `set` must reject indices outside `[0, length)`; `pop_back` must reject an empty array. Both throw `std::out_of_range`.\n4. The destructor releases the buffer. Delete the copy constructor and copy assignment, or the raw pointer will be freed twice."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "For each method, write its **signature and a one-line comment saying what it guarantees** -- no bodies.\n\n- `explicit DynamicArray(int cap = 2)` -- heap buffer, length 0, resize count 0; non-positive `cap` becomes 2.\n- `~DynamicArray()` -- releases the buffer.\n- `void push_back(int n)` -- grows the buffer if full, then stores.\n- `int pop_back() const -> int` (no; `int pop_back()`) -- returns the last element, shrinking length.\n- `int get(int i) const` / `void set(int i, int n)` -- bounds-checked element access.\n- `int size() const` / `int get_capacity() const` / `int resizes() const` -- O(1) accessors.\n\nThen fill in one body at a time, running the tests after each."
+            }
+          ]
         }
       ]
     },
@@ -211,6 +257,52 @@
           "solution_relpath": "dsa_learn/curriculum/topics/two-pointers/trapping-rain-water/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/two-pointers/trapping-rain-water/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-opposite-end-tracker",
+          "slug": "design-opposite-end-tracker",
+          "title": "Design an Opposite-Ends Window Tracker",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) end updates, O(W) pair-sum query",
+          "space_complexity_target": "O(W)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/two-pointers/design-opposite-end-tracker/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/two-pointers/design-opposite-end-tracker/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/two-pointers/design-opposite-end-tracker/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/two-pointers/design-opposite-end-tracker/problem.md",
+          "components": [
+            "constructor",
+            "push_left",
+            "push_right",
+            "shrink_left",
+            "shrink_right",
+            "contains",
+            "at",
+            "size",
+            "reset"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "The window must stay non-decreasing. Ask what that costs each time you extend an end, and what a query can then safely discard."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `push_left` accepts a value only when it is at or below the current front; `push_right` only when it is at or above the current back. Anything else throws `std::invalid_argument` and leaves the window untouched.\n2. `shrink_left` / `shrink_right` drop an end and throw `std::out_of_range` when empty.\n3. `contains(target)` sweeps inward: `lo` from the front, `hi` from the back. If the sum is too small, advance `lo`; if too large, retreat `hi`. Stop when `lo >= hi` so no position is used twice."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and invariants only:\n\n- `OppositeEndsTracker()` / `OppositeEndsTracker(const std::vector<int>& initial)` -- reject an unsorted seed.\n- `void push_left(int value)` / `void push_right(int value)` -- enforce the ordering precondition.\n- `void shrink_left()` / `void shrink_right()` -- throw when empty.\n- `bool contains(int target) const` -- the inward sweep; O(W).\n- `int size() const` / `int at(int i) const` / `bool is_ordered() const` -- O(1).\n- `void reset()` -- empties the window.\n\nWrite the pruning comment first; it is the part being tested."
+            }
+          ]
         }
       ]
     },
@@ -281,6 +373,52 @@
           "solution_relpath": "dsa_learn/curriculum/topics/sliding-window/permutation-in-string/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/sliding-window/permutation-in-string/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-sliding-window",
+          "slug": "design-sliding-window",
+          "title": "Design a Frequency-Map Sliding Window",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) amortized push and pop",
+          "space_complexity_target": "O(D) distinct values",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/sliding-window/design-sliding-window/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/sliding-window/design-sliding-window/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/sliding-window/design-sliding-window/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/sliding-window/design-sliding-window/problem.md",
+          "components": [
+            "constructor",
+            "push",
+            "pop",
+            "size",
+            "count_of",
+            "distinct",
+            "all_unique",
+            "max_count",
+            "clear"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Which quantities does the technique read off the window? Width, counts, and whether anything repeats -- and each must survive an end moving."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `push` raises `distinct` only the first time a value is seen, so read the count before incrementing it.\n2. `pop` throws `std::out_of_range` when the value is absent. When a count reaches zero, erase the key and lower `distinct` -- forgetting this is the step that makes every later width comparison wrong.\n3. `all_unique` is `distinct == size`. `max_count` scans the counts.\n4. `clear` empties the map and resets both derived counters."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures, no bodies:\n\n- `SlidingWindow()` -- empty window.\n- `void push(int value)` / `void pop(int value)` -- the O(1) end updates.\n- `int size() const` / `int count_of(int value) const` / `int distinct() const` -- O(1) once `distinct` is maintained.\n- `bool all_unique() const` / `int max_count() const` -- O(1) / O(D).\n- `void clear()` -- resets everything."
+            }
+          ]
         }
       ]
     },
@@ -350,6 +488,53 @@
           "solution_relpath": "dsa_learn/curriculum/topics/stack/daily-temperatures/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/stack/daily-temperatures/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-stack",
+          "slug": "design-stack",
+          "title": "Design a Bounded Stack",
+          "difficulty": "Easy",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) for every operation",
+          "space_complexity_target": "O(C) for capacity C",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/stack/design-stack/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/stack/design-stack/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/stack/design-stack/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/stack/design-stack/problem.md",
+          "components": [
+            "constructor",
+            "push",
+            "pop",
+            "peek",
+            "empty",
+            "full",
+            "size",
+            "capacity",
+            "clear",
+            "destroy"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "`std::stack` cannot report full, because the vector underneath it grows. Fixing the capacity is what makes `empty` and `full` two distinct, reachable states."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. Allocate a buffer of `capacity` slots in the constructor; a non-positive capacity becomes 1.\n2. `push` throws `std::overflow_error` when full, else stores and raises the height.\n3. `pop` and `peek` throw `std::out_of_range` when the height is 0. `pop` lowers the height; `peek` must not.\n4. `clear` sets the height to 0 and leaves the buffer alone -- which is why `peek` afterwards throws instead of returning a stale element.\n5. The destructor frees the buffer, and copying is deleted."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures only:\n\n- `explicit BoundedStack(int capacity)` / `~BoundedStack()` -- own the buffer; non-copyable.\n- `void push(int value)` -- `std::overflow_error` when full.\n- `int pop()` / `int peek() const` -- `std::out_of_range` when empty.\n- `bool empty() const` / `bool full() const` -- mutually exclusive.\n- `int size() const` / `int capacity() const` -- height and fixed bound.\n- `void clear()` -- height only."
+            }
+          ]
         }
       ]
     },
@@ -419,6 +604,52 @@
           "solution_relpath": "dsa_learn/curriculum/topics/binary-search/find-minimum-in-rotated-sorted-array/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/binary-search/find-minimum-in-rotated-sorted-array/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-binary-search-index",
+          "slug": "design-binary-search-index",
+          "title": "Design a Sorted-Array Search Index",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(log N) per query",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/binary-search/design-binary-search-index/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/binary-search/design-binary-search-index/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/binary-search/design-binary-search-index/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/binary-search/design-binary-search-index/problem.md",
+          "components": [
+            "constructor",
+            "lower_bound",
+            "upper_bound",
+            "count_of",
+            "contains",
+            "at",
+            "size",
+            "load",
+            "clear"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Binary search answers boundary questions, not hit-or-miss ones. Get `lower_bound` right and `upper_bound` is the same loop with one comparison changed."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. Sort on construction -- the search precondition is the structure's responsibility, not the caller's.\n2. Both bounds use the closed half-open interval `[lo, hi)` with `hi = size()`. Probe `mid = lo + (hi - lo) / 2`.\n3. `lower_bound`: move `lo` to `mid + 1` when `sorted[mid] < target`, otherwise `hi = mid`. `upper_bound` is identical except it uses `<=`.\n4. `count_of` is the difference of the two bounds; `contains` checks that `lower_bound` actually lands on the target.\n5. Never write `(lo + hi) / 2` -- it overflows near `INT_MAX`."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and invariants only:\n\n- `explicit SearchIndex(std::vector<int> values)` -- sorts on entry.\n- `int lower_bound(int target) const` -- first index not less than target, or `size()`.\n- `int upper_bound(int target) const` -- first index greater than target, or `size()`.\n- `int count_of(int target) const` -- difference of the two bounds.\n- `bool contains(int target) const` -- one lookup, no second pass.\n- `int at(int i) const` / `int size() const` / `int probe_count(int target) const` -- accessors and the halving counter."
+            }
+          ]
         }
       ]
     },
@@ -535,6 +766,56 @@
           "solution_relpath": "dsa_learn/curriculum/topics/linked-lists/linked-list-cycle/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/linked-lists/linked-list-cycle/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-doubly-linked-list",
+          "slug": "design-doubly-linked-list",
+          "title": "Design a Doubly Linked List",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) end updates, O(i) indexed access",
+          "space_complexity_target": "O(N) plus O(1) auxiliary",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/linked-lists/design-doubly-linked-list/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/linked-lists/design-doubly-linked-list/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/linked-lists/design-doubly-linked-list/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/linked-lists/design-doubly-linked-list/problem.md",
+          "components": [
+            "constructor",
+            "push_front",
+            "push_back",
+            "pop_front",
+            "pop_back",
+            "at",
+            "insert_after",
+            "erase_after",
+            "contains",
+            "size",
+            "clear",
+            "reverse",
+            "destroy"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "The `prev` pointer is what makes deleting a *known* node O(1). Every operation that changes the chain must therefore update two links, and a single missed re-link creates a cycle that nothing reports."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. On an empty list the new node is both head and tail -- get that right in `push_front`, `push_back`, and in both `pop` methods.\n2. `pop_front` advances `head` and clears the new `head->prev`; `pop_back` is the mirror. Each releases the detached node.\n3. `at(i)` should walk from whichever end is nearer.\n4. `reverse` swaps each node's `prev` and `next` in a single pass, then swaps head and tail. Both links must move together.\n5. `is_consistent` walks both directions and confirms each `next->prev` points back, which is what makes the other tests meaningful."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and per-operation invariants:\n\n- `DoublyLinkedList()` / `~DoublyLinkedList()` -- non-copyable.\n- `void push_front(int)` / `void push_back(int)` -- O(1).\n- `int pop_front()` / `int pop_back()` -- `std::out_of_range` when empty.\n- `int at(int i) const` -- `std::out_of_range` unless in range.\n- `void insert_after(int i, int value)` / `void erase_after(int i)` -- splice and unlink, moving the tail when needed.\n- `bool contains(int value) const` / `int size() const` / `bool empty() const` / `bool is_consistent() const`.\n- `void clear()` / `void reverse()`."
+            }
+          ]
         }
       ]
     },
@@ -633,6 +914,54 @@
           "solution_relpath": "dsa_learn/curriculum/topics/trees/binary-tree-level-order-traversal/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/trees/binary-tree-level-order-traversal/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-bst",
+          "slug": "design-bst",
+          "title": "Design a Binary Search Tree",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(H) per operation, H the height",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/trees/design-bst/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/trees/design-bst/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/trees/design-bst/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/trees/design-bst/problem.md",
+          "components": [
+            "constructor",
+            "insert",
+            "contains",
+            "find_min",
+            "find_max",
+            "remove",
+            "size",
+            "height",
+            "inorder",
+            "clear",
+            "destroy"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "One rule defines the structure: every key left of a node is smaller, every key right of it is larger. `inorder` is that rule written down -- if it stops being sorted, a mutation broke it."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `insert` descends left for a smaller key, right for a larger one, and does nothing for an equal key -- the tree is a set.\n2. `contains`, `find_min`, and `find_max` are pure descents; the last two throw `std::out_of_range` on an empty tree.\n3. `remove` has three cases. No left child: promote the right. No right child: promote the left. **Two** children: copy the inorder successor's key in, then delete the successor from the right subtree.\n4. `height` is 0 when empty and 1 + the larger child height otherwise. Insert sorted keys and it becomes N -- that contrast is the lesson."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the invariant each one preserves:\n\n- `BST()` / `~BST()` -- non-copyable, releases the subtree.\n- `void insert(int key)` -- duplicates ignored.\n- `bool contains(int key) const` / `int find_min() const` / `int find_max() const` -- descents; the extremes throw when empty.\n- `void remove(int key)` -- the three cases above; absent keys are a no-op.\n- `int size() const` / `int height() const` / `std::vector<int> inorder() const` -- left, node, right.\n- `void clear()`."
+            }
+          ]
         }
       ]
     },
@@ -674,6 +1003,51 @@
           "solution_relpath": "dsa_learn/curriculum/topics/tries/design-add-and-search-words/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/tries/design-add-and-search-words/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-trie",
+          "slug": "design-trie",
+          "title": "Design a Prefix Trie",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(L) per operation, L the word length",
+          "space_complexity_target": "O(26 * total characters)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/tries/design-trie/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/tries/design-trie/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/tries/design-trie/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/tries/design-trie/problem.md",
+          "components": [
+            "constructor",
+            "insert",
+            "search",
+            "starts_with",
+            "remove",
+            "size",
+            "node_total",
+            "height"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "The fixed 26-slot fan-out is what removes hashing from a walk -- but it only works for lowercase letters, and it is that domain check that keeps the array index in bounds."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `c - 'a'` is sound only for `'a'..'z'`. For a digit the difference is negative, and indexing a 26-slot array with it is undefined behaviour that aborts rather than answers. Validate the whole word *before* descending, so a bad word cannot leave a half-built chain.\n2. `search` needs the final node to exist **and** carry the word-ending mark; `starts_with` needs only the path.\n3. `remove` clears the mark, then prunes bottom-up, stopping as soon as a node has children or is itself a word ending. Both conditions matter.\n4. Keep `node_total` exact in step with the pruning."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the precondition each one enforces:\n\n- `Trie()` -- one node, the empty prefix.\n- `void insert(const std::string& word)` -- ignore out-of-domain input; duplicates change nothing.\n- `bool search(const std::string&) const` / `bool starts_with(const std::string&) const` -- O(L).\n- `bool remove(const std::string& word)` -- false when absent or out-of-domain.\n- `int size() const` / `int node_total() const` / `int height() const`.\n- `static int slot_of(char c)` -- the domain guard everything else uses."
+            }
+          ]
         }
       ]
     },
@@ -729,6 +1103,52 @@
           "solution_relpath": "dsa_learn/curriculum/topics/heap/kth-largest-element-in-an-array/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/heap/kth-largest-element-in-an-array/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-binary-heap",
+          "slug": "design-binary-heap",
+          "title": "Design a Binary Max-Heap",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(log N) push and pop, O(N) build",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/heap/design-binary-heap/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/heap/design-binary-heap/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/heap/design-binary-heap/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/heap/design-binary-heap/problem.md",
+          "components": [
+            "constructor",
+            "push",
+            "pop",
+            "peek",
+            "size",
+            "empty",
+            "contains",
+            "clear",
+            "drain"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "The layout rule is the whole structure: the node at index `i` has children at `2i + 1` and `2i + 2`. Get that arithmetic wrong and you get something that looks like a heap and is not."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `push` appends, then sifts the new last index up. Sifting moves the held value one level per step and never revisits a level -- that is the O(log N).\n2. `pop` returns the root, moves the last element there, shrinks, and sifts the root down. It throws `std::out_of_range` when empty.\n3. `build` must sift down only the **internal** nodes, from `(n - 2) / 2` up to 0. Inserting one at a time instead is O(N log N) and an easy regression.\n4. `contains` is a linear scan. A heap orders parents against children, not values against each other, so there is nothing to binary search."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the arithmetic:\n\n- `explicit BinaryHeap(int initial_capacity = 4)` / `void build(std::vector<int> values)` -- bulk construction in O(N).\n- `void push(int value)` / `int pop()` / `int peek() const` -- O(log N), O(1), O(log N).\n- `void sift_up(int index)` / `void sift_down(int index)` -- children at `2i+1`/`2i+2`, parent at `(i-1)/2`.\n- `int size() const` / `bool empty() const` / `bool contains(int) const` -- `contains` is O(N), deliberately.\n- `bool is_valid() const` / `void clear()` / `std::vector<int> drain()`.\n\nWrite `is_valid` first; it is what tells you the rest works."
+            }
+          ]
         }
       ]
     },
@@ -785,6 +1205,52 @@
           "solution_relpath": "dsa_learn/curriculum/topics/backtracking/permutations/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/backtracking/permutations/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-choice-stack",
+          "slug": "design-choice-stack",
+          "title": "Design a Backtracking Choice Stack",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) amortized undo, expected O(1) memo lookup",
+          "space_complexity_target": "O(D + R * L)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/backtracking/design-choice-stack/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/backtracking/design-choice-stack/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/backtracking/design-choice-stack/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/backtracking/design-choice-stack/problem.md",
+          "components": [
+            "constructor",
+            "push_choice",
+            "pop_choice",
+            "depth",
+            "at",
+            "tried",
+            "mark_tried",
+            "is_backtracking",
+            "reset"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Backtracking is not 'try a candidate' -- it is 'try, and put everything back'. Making the undo countable is most of what this structure is for."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `pop_choice` undoes one level and counts it, so `backtrack_count` is a direct readout of discarded work.\n2. The memo key must combine the current path **and** the candidate. Hashing only the candidate makes one depth's refusal poison another's, and the search returns wrong answers.\n3. `tried_at_current_depth` must count branches refused *at* this depth. A descendant's key also starts with this path's text, so a prefix match alone reports a child's refusals as the parent's.\n4. `reset` clears the branch, the refusals, and the counter."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the key's contract:\n\n- `ChoiceStack()` -- empty branch, nothing refused.\n- `void push_choice(int choice)` / `int pop_choice()` -- O(1) amortized; `pop_choice` throws on an empty branch.\n- `int depth() const` / `int at(int i) const` -- O(1).\n- `bool tried(int candidate) const` / `void mark_tried(int candidate)` -- key on path plus candidate.\n- `int tried_at_current_depth() const` -- exact depth only.\n- `bool is_backtracking() const` / `int backtrack_count() const` / `void reset()` -- counters."
+            }
+          ]
         }
       ]
     },
@@ -855,6 +1321,52 @@
           "solution_relpath": "dsa_learn/curriculum/topics/graphs/pacific-atlantic-water-flow/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/graphs/pacific-atlantic-water-flow/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-adjacency-graph",
+          "slug": "design-adjacency-graph",
+          "title": "Design an Adjacency-List Graph",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(deg(u)) per edge operation",
+          "space_complexity_target": "O(V + E)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/graphs/design-adjacency-graph/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/graphs/design-adjacency-graph/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/graphs/design-adjacency-graph/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/graphs/design-adjacency-graph/problem.md",
+          "components": [
+            "constructor",
+            "add_vertex",
+            "add_edge",
+            "has_edge",
+            "degree",
+            "neighbours_of",
+            "remove_edge",
+            "vertex_count",
+            "edge_count"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "An adjacency matrix costs O(V^2) whether or not edges exist; a list costs O(V + E) and is why a traversal is linear in the graph. The price is that `has_edge` is O(deg(u)) rather than O(1) -- say so rather than hide it."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. Store each edge as a `(neighbour, weight)` pair at **both** endpoints. A separate weight table has to be index-aligned with the adjacency lists, and the alignment breaks the first time an edge is removed from the middle of one.\n2. `add_edge` on an existing pair updates the weight instead of duplicating. A self-loop is recorded once, so `degree` counts it once.\n3. `remove_edge` must drop both sides and lower the edge count; removing an absent edge is a no-op.\n4. `is_symmetric` is the bug catcher: a one-sided insert makes a traversal silently miss half the graph."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the representation:\n\n- `explicit AdjacencyGraph(int vertex_limit)` -- clamp a non-positive limit to 0.\n- `int vertex_count() const` / `long long edge_count() const` / `void add_vertex()`.\n- `void add_edge(int u, int v, long long weight = 1)` / `bool has_edge(int u, int v) const` / `long long weight_between(int u, int v) const`.\n- `int degree(int u) const` / `std::vector<int> neighbours_of(int u) const` / `std::vector<int> sorted_neighbours(int u) const`.\n- `void remove_edge(int u, int v)` / `bool is_symmetric() const` / `bool is_simple() const`.\n\nDocument the storage as one entry per incident edge."
+            }
+          ]
         }
       ]
     },
@@ -925,6 +1437,51 @@
           "solution_relpath": "dsa_learn/curriculum/topics/dynamic-programming/coin-change/solution.cpp",
           "problem_relpath": "dsa_learn/curriculum/topics/dynamic-programming/coin-change/problem.md",
           "reference_url": "https://roadmap.sh/datastructures-and-algorithms"
+        },
+        {
+          "id": "design-memo-table",
+          "slug": "design-memo-table",
+          "title": "Design a Memoisation Table",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "Expected O(1) per state",
+          "space_complexity_target": "O(K) states",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/dynamic-programming/design-memo-table/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/dynamic-programming/design-memo-table/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/dynamic-programming/design-memo-table/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/dynamic-programming/design-memo-table/problem.md",
+          "components": [
+            "constructor",
+            "is_computed",
+            "get",
+            "set",
+            "size",
+            "hits",
+            "misses",
+            "reset"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Memoisation is one sentence: compute a state once, then read it back. The payoff depends entirely on *when* the store is consulted relative to the work."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. Consult `is_computed` **before** computing. Read after, and every path reaching a state re-walks its subtree -- the exponential behaviour memoisation exists to remove.\n2. A missing key must be distinguishable from a computed `0`, or every subproblem looks already solved. `get` throws; `get_or` substitutes an explicit fallback.\n3. Count every read. A table whose hit count stays at zero while a long computation finishes is not memoising anything, however correct the answer.\n4. `clear` keeps the counters, `reset` zeroes them. That distinction is what lets you compare two runs."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the ordering contract:\n\n- `MemoTable()` -- empty, no reads recorded.\n- `bool is_computed(long long key) const` -- checked before the work.\n- `long long get(long long key) const` -- throws `std::out_of_range` on a miss, and counts it.\n- `long long get_or(long long key, long long fallback) const` -- counts the miss too.\n- `void set(long long key, long long value)` -- re-storing adds no entry.\n- `int size() const` / `long long hits() const` / `long long misses() const`.\n- `void clear()` / `void reset()` / `std::vector<long long> keys() const` -- sorted with an O(K log K) sort."
+            }
+          ]
         }
       ]
     },
@@ -938,7 +1495,57 @@
       "prerequisites": [
         "arrays-hashing"
       ],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "design-merge-sort",
+          "slug": "design-merge-sort",
+          "title": "Design a Bottom-Up Merge Sort",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(N log N), O(N) per merge pass",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/sorting/design-merge-sort/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/sorting/design-merge-sort/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/sorting/design-merge-sort/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/sorting/design-merge-sort/problem.md",
+          "components": [
+            "constructor",
+            "build",
+            "count_runs",
+            "run_length",
+            "merge_two_runs",
+            "merge_all",
+            "passes",
+            "sort",
+            "is_sorted",
+            "at",
+            "size",
+            "reset"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Merge sort's unit of work is the sorted **run**. Make the runs countable and the algorithm's state becomes visible instead of hidden behind a call stack."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. A run ends wherever the sequence stops ascending. Compare with `<`, not `<=`, so equal neighbours stay in one run; a sorted array is then exactly one run.\n2. Merge with `<=` on the left half, or equal elements lose their relative order and the sort stops being stable.\n3. In the lane loop, after merging runs `i` and `i+1` the merged run **occupies index `i`**, so the next partner is at `i + 1` and the loop must advance by one. Advancing by two skips a pair, each pass stops halving, and the pass count exceeds ceil(log2 R) -- still correct, quietly slower.\n4. `passes()` is the ceil(log2 R) the cost argument derives."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the run representation:\n\n- `explicit MergeSorter(std::vector<int> initial)` -- holds the values.\n- `void build()` -- records maximal ascending runs as half-open `[begin, end)` ranges.\n- `int count_runs() const` / `int run_length(int i) const` / `int run_start(int i) const` -- run inspection.\n- `void merge_two_runs(int i)` / `void merge_all()` / `void sort()`.\n- `int passes() const` / `long long comparison_count() const` -- the two halves of the cost argument, counted.\n- `bool is_sorted() const` / `int at(int i) const` / `int size() const` / `void reset()` / `void set_values(std::vector<int>)`."
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "graph-algorithms",
@@ -950,7 +1557,57 @@
       "prerequisites": [
         "graphs"
       ],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "design-bfs-frontier",
+          "slug": "design-bfs-frontier",
+          "title": "Design a Breadth-First Frontier",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) per operation, O(V + E) per traversal",
+          "space_complexity_target": "O(V)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/graph-algorithms/design-bfs-frontier/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/graph-algorithms/design-bfs-frontier/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/graph-algorithms/design-bfs-frontier/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/graph-algorithms/design-bfs-frontier/problem.md",
+          "components": [
+            "constructor",
+            "enqueue",
+            "dequeue",
+            "peek",
+            "is_visited",
+            "pending",
+            "frontier_size",
+            "expanded_count",
+            "vertex_count",
+            "enqueued_count",
+            "is_complete",
+            "reset"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Mark a vertex visited when it is **enqueued**, not when it is dequeued. Break that and a vertex reachable by two parents is queued twice, expanded twice, and its whole subtree walked twice -- with no crash and no wrong answer."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `enqueue` returns false without queueing anything when the vertex is already visited. That single check is what keeps the frontier linear.\n2. Keep a cursor rather than erasing from the front, so `pending()` is a contiguous range instead of a per-operation shift.\n3. `enqueued_count` versus `vertex_count` is the readout: under mark-on-enqueue they are equal; under mark-on-dequeue the insertions run to O(E).\n4. `is_complete` is true when nothing is waiting -- not when nothing was ever enqueued. A search can drain and then be extended again."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the discovery rule:\n\n- `explicit BfsFrontier(int vertex_count = 0)` -- empty.\n- `bool enqueue(int vertex)` -- mark, queue, count; false if already visited.\n- `int dequeue()` / `int peek() const` -- oldest first; throw `std::out_of_range` when empty.\n- `bool is_visited(int) const` / `int frontier_size() const` / `std::vector<int> pending() const`.\n- `int expanded_count() const` / `int vertex_count() const` / `long long enqueued_count() const`.\n- `bool is_complete() const` / `void reset()`."
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "advanced-data-structures",
@@ -964,7 +1621,52 @@
         "heap",
         "arrays-hashing"
       ],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "design-union-find",
+          "slug": "design-union-find",
+          "title": "Design a Disjoint-Set Union",
+          "difficulty": "Medium",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(alpha(N)) amortized per operation",
+          "space_complexity_target": "O(N)",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/advanced-data-structures/design-union-find/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/advanced-data-structures/design-union-find/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/advanced-data-structures/design-union-find/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/advanced-data-structures/design-union-find/problem.md",
+          "components": [
+            "constructor",
+            "find",
+            "unite",
+            "connected",
+            "component_count",
+            "tree_height",
+            "reset"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Two optimisations, and both are needed. Path compression flattens the trees during `find`; union by rank stops long chains forming in the first place. Together they reach the inverse-Ackermann bound."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. `find` walks to the root, then walks again rewriting every node on the path to point straight at it. The second pass is what makes a *sequence* of calls cheap rather than each call in isolation.\n2. `unite` attaches the lower-rank root under the higher-rank one and bumps the rank only when the ranks were equal. Attaching by element id instead produces a linear chain the moment ids arrive ascending, and every `find` becomes O(N) while still returning the right answer.\n3. Nothing about correctness distinguishes a healthy structure from a degenerate one. `tree_height` does: bounded by ceil(log2 N) when the rank rule is in force, and near N when it is missing."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the two optimisations:\n\n- `explicit UnionFind(int element_count)` -- one set per element; clamp a negative count to 0.\n- `int find(int element)` -- path-compressing root lookup; throws `std::out_of_range`.\n- `bool unite(int a, int b)` -- false when already in one set.\n- `bool connected(int a, int b)` / `int component_count() const` / `int rank_of_set(int element)`.\n- `int tree_height()` -- the diagnostic for a degenerate structure.\n- `void reset()` / `void split(int element)` -- `split` throws `std::logic_error`: a disjoint set cannot lose one element."
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "math-bitwise",
@@ -974,7 +1676,57 @@
       "display_order": 16,
       "roadmap_url": "https://roadmap.sh/datastructures-and-algorithms",
       "prerequisites": [],
-      "exercises": []
+      "exercises": [
+        {
+          "id": "design-bit-mask-set",
+          "slug": "design-bit-mask-set",
+          "title": "Design a Bit-Mask Set",
+          "difficulty": "Easy",
+          "kind": "implementation",
+          "is_foundation": true,
+          "time_complexity_target": "O(1) membership, O(popcount) count",
+          "space_complexity_target": "O(1) one machine word",
+          "timeout_ms": 10000,
+          "starter_relpath": "exercises/math-bitwise/design-bit-mask-set/solution.cpp",
+          "test_relpath": "dsa_learn/curriculum/topics/math-bitwise/design-bit-mask-set/tests.cpp",
+          "solution_relpath": "dsa_learn/curriculum/topics/math-bitwise/design-bit-mask-set/solution.cpp",
+          "problem_relpath": "dsa_learn/curriculum/topics/math-bitwise/design-bit-mask-set/problem.md",
+          "components": [
+            "constructor",
+            "set",
+            "clear",
+            "contains",
+            "count",
+            "to_mask",
+            "bit_width",
+            "any",
+            "all",
+            "reset",
+            "set_all",
+            "resize"
+          ],
+          "hints": [
+            {
+              "tier": 1,
+              "type": "NUDGE",
+              "title": "Nudge",
+              "content_markdown": "Membership is a shift and a mask against one word: no allocation, no branch, no memory access beyond the word. That is also why subset, superset, disjoint, and overlap all reduce to `&` between two masks."
+            },
+            {
+              "tier": 2,
+              "type": "STRATEGY",
+              "title": "Strategy",
+              "content_markdown": "1. Build every mask from `1ULL`. `1 << 31` is already undefined behaviour on a 32-bit `int`, and `1 << 32` is meaningless -- so range-check the position and use the wide literal.\n2. An all-ones mask avoids shifting by the width: compute it as `width >= 64 ? ~0ULL : (1ULL << width) - 1`.\n3. `count` uses Kernighan's trick -- `bits &= bits - 1` clears the lowest set bit -- so the loop runs once per set bit, not once per bit.\n4. `resize` must refuse to narrow past a set bit. Discarding it silently loses data behind a successful return."
+            },
+            {
+              "tier": 3,
+              "type": "BLUEPRINT",
+              "title": "Method blueprint",
+              "content_markdown": "Signatures and the two arithmetic hazards:\n\n- `explicit BitMaskSet(int bit_width = 0)` -- clamp to `[0, MAX_WIDTH]`.\n- `void set(int)` / `void clear(int)` / `void flip(int)` / `bool contains(int) const` -- bounds-checked, mask from `1ULL`.\n- `int count() const` -- Kernighan's trick.\n- `unsigned long long to_mask() const` / `int bit_width() const`.\n- `bool any() const` / `bool all() const` -- a zero-width set is vacuously full.\n- `void reset()` / `void set_all()` / `void resize(int)` -- narrowing throws `std::logic_error` past a set bit.\n- `std::string to_string() const` -- most significant bit first."
+            }
+          ]
+        }
+      ]
     }
   ]
 }

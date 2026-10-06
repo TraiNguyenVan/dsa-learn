@@ -29,38 +29,38 @@ This reference document establishes the architectural and pedagogical alignment 
 | | |
 | :-- | --: |
 | Topics | **16** |
-| Exercises | **52** |
+| Exercises | **68** |
 | &nbsp;&nbsp;of which problem exercises | 52 |
-| &nbsp;&nbsp;of which implementation exercises | 0 |
+| &nbsp;&nbsp;of which implementation exercises | 16 |
 | Topics with an authored lesson | **16** |
 | Topics still showing placeholder lesson text | **0** |
 | Topics with the full theory standard (correctness + derivations + limits) | **16** |
 | Topics with a cost table | **16** |
 | Topics with at least one animation | **16** |
 | Declared animation operations | **20** |
-| Topics with an implementation exercise | 0 |
+| Topics with an implementation exercise | 16 |
 | Pattern blueprints | 15 |
 
 ### Per-Topic Material Set
 
 | # | Topic ID | Title | Lesson | Lesson words | Cost table | Animation | Exercises | Prerequisites |
 | --: | :-- | :-- | :-- | --: | :-- | :-- | --: | :-- |
-| 1 | `arrays-hashing` | Arrays & Hashing | yes | 1,729 | yes | 1 (hash_bucket_insert) | 7 | — |
-| 2 | `two-pointers` | Two Pointers | yes | 1,496 | yes | 1 (two_sum) | 5 | arrays-hashing, binary-search |
-| 3 | `sliding-window` | Sliding Window | yes | 1,903 | yes | 1 (longest_unique_window) | 4 | arrays-hashing, two-pointers |
-| 4 | `stack` | Stack | yes | 1,983 | yes | 2 (monotonic_stack, fifo_queue) | 4 | arrays-hashing |
-| 5 | `binary-search` | Binary Search | yes | 2,184 | yes | 1 (binary_search) | 4 | arrays-hashing |
-| 6 | `linked-lists` | Linked Lists | yes | 1,679 | yes | 2 (insert_head, reverse_list) | 6 | — |
-| 7 | `trees` | Trees & Binary Search Trees | yes | 1,725 | yes | 2 (bst_search, bst_insert) | 6 | arrays-hashing, linked-lists |
-| 8 | `tries` | Tries (Prefix Trees) | yes | 2,149 | yes | 1 (trie_insert_search) | 2 | arrays-hashing |
-| 9 | `heap` | Heap & Priority Queue | yes | 2,494 | yes | 1 (heap_insert) | 3 | arrays-hashing |
-| 10 | `backtracking` | Backtracking | yes | 2,140 | yes | 1 (pruned_pair_search) | 3 | stack, trees |
-| 11 | `graphs` | Graphs | yes | 2,367 | yes | 1 (bfs_traversal) | 4 | linked-lists, trees |
-| 12 | `dynamic-programming` | Dynamic Programming | yes | 2,177 | yes | 1 (dp_table_fill) | 4 | arrays-hashing, backtracking |
-| 13 | `sorting` | Sorting | yes | 2,026 | yes | 1 (merge_sort) | 0 | arrays-hashing |
-| 14 | `graph-algorithms` | Graph Algorithms | yes | 2,041 | yes | 1 (topological_sort) | 0 | graphs |
-| 15 | `advanced-data-structures` | Advanced Data Structures | yes | 2,245 | yes | 2 (union_find, segment_tree_query) | 0 | trees, heap, arrays-hashing |
-| 16 | `math-bitwise` | Math and Bitwise Techniques | yes | 2,451 | yes | 1 (bitwise_demo) | 0 | — |
+| 1 | `arrays-hashing` | Arrays & Hashing | yes | 1,729 | yes | 1 (hash_bucket_insert) | 8 | — |
+| 2 | `two-pointers` | Two Pointers | yes | 1,496 | yes | 1 (two_sum) | 6 | arrays-hashing, binary-search |
+| 3 | `sliding-window` | Sliding Window | yes | 1,903 | yes | 1 (longest_unique_window) | 5 | arrays-hashing, two-pointers |
+| 4 | `stack` | Stack | yes | 1,983 | yes | 2 (monotonic_stack, fifo_queue) | 5 | arrays-hashing |
+| 5 | `binary-search` | Binary Search | yes | 2,184 | yes | 1 (binary_search) | 5 | arrays-hashing |
+| 6 | `linked-lists` | Linked Lists | yes | 1,679 | yes | 2 (insert_head, reverse_list) | 7 | — |
+| 7 | `trees` | Trees & Binary Search Trees | yes | 1,725 | yes | 2 (bst_search, bst_insert) | 7 | arrays-hashing, linked-lists |
+| 8 | `tries` | Tries (Prefix Trees) | yes | 2,149 | yes | 1 (trie_insert_search) | 3 | arrays-hashing |
+| 9 | `heap` | Heap & Priority Queue | yes | 2,494 | yes | 1 (heap_insert) | 4 | arrays-hashing |
+| 10 | `backtracking` | Backtracking | yes | 2,140 | yes | 1 (pruned_pair_search) | 4 | stack, trees |
+| 11 | `graphs` | Graphs | yes | 2,367 | yes | 1 (bfs_traversal) | 5 | linked-lists, trees |
+| 12 | `dynamic-programming` | Dynamic Programming | yes | 2,177 | yes | 1 (dp_table_fill) | 5 | arrays-hashing, backtracking |
+| 13 | `sorting` | Sorting | yes | 2,026 | yes | 1 (merge_sort) | 1 | arrays-hashing |
+| 14 | `graph-algorithms` | Graph Algorithms | yes | 2,041 | yes | 1 (topological_sort) | 1 | graphs |
+| 15 | `advanced-data-structures` | Advanced Data Structures | yes | 2,245 | yes | 2 (union_find, segment_tree_query) | 1 | trees, heap, arrays-hashing |
+| 16 | `math-bitwise` | Math and Bitwise Techniques | yes | 2,451 | yes | 1 (bitwise_demo) | 1 | — |
 
 ### Pattern Recognition Coverage
 
@@ -87,10 +87,9 @@ before the technique can be applied.
 | `trie-prefix-reuse` | `tries` |
 | `two-pointers-opposite-ends` | `arrays-hashing`, `two-pointers` |
 
-### What Is Not Yet Covered
+### Implementation Exercises
 
-- **Implementation exercises**: 16 of 16 topics have no `kind: "implementation"` exercise yet. Theory and animation are
-  complete for all 16; the build-it-yourself loop is the remaining gap.
+- **Implementation exercises**: all 16 topics now carry exactly one `kind: "implementation"` exercise (16 in total), each with per-operation foundation tests and a three-tier hint ladder. Technique-based topics build the structure their technique operates on; structure topics build the structure that is the topic.
 - **Problem exercises are intentionally not growing.** This curriculum's scope is theory,
   cost derivations, and visualization; problem-exercise count is frozen at
   52 by design, not by omission.

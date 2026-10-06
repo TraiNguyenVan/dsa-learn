@@ -32,8 +32,10 @@ compile_flags.txt
 .dsa/*.db-shm
 
 # Frontend / Node.js
+# A bare directory pattern matches at any depth, so this also covers
+# frontend/node_modules/. Do not re-add the scoped form: it is redundant, and having
+# both has caused this line to conflict across branches more than once.
 node_modules/
-frontend/node_modules/
 frontend/.vite/
 *.log
 npm-debug.log*

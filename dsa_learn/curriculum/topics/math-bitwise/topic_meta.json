@@ -123,5 +123,10 @@
       "section_ref": "limits",
       "claim": "No bitwise trick improves asymptotic complexity, since every operation is O(1) and only the constant moves. Fixed-width arithmetic cannot represent unbounded values, so beyond the word width each operation costs O(limbs) and the advantage disappears. Concurrent bit manipulation needs atomics because compound assignment is a read-modify-write. Signed shifts and 1 << 31 are undefined behaviour, not merely implementation-defined, which is why every bit routine should take unsigned parameters."
     }
+  },
+  "supporting_structure": {
+    "name": "Bit-Mask Set",
+    "native_to_technique": true,
+    "rationale": "Bitwise techniques do not operate on collections; they operate on a single word of packed flags. Every mask idiom the topic teaches -- set a flag, test a flag, clear a flag, check a subset -- is a shift and a mask against that word, so the bit set is not a container introduced to satisfy the exercise rule but the operand the technique is defined over."
   }
 }
