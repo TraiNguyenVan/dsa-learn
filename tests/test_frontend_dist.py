@@ -72,6 +72,10 @@ def _newest_mtime(root: Path) -> float:
     return max(times) if times else 0.0
 
 
+# See the mtime comparison in TestDistIsFresh. Real staleness is commits apart.
+STALENESS_TOLERANCE_S = 1.0
+
+
 def _main_bundle() -> Path | None:
     """The JS bundle `dist/index.html` loads, or None if there is not one."""
     if not DIST_INDEX.exists():
@@ -99,11 +103,18 @@ class TestDistIsFresh(unittest.TestCase):
         The check that was absent when this bug was found. If it fails, the
         dashboard is serving a bundle that predates the source it was built
         from, and any fix landed in src since then is not live.
+
+        Comparison is at second granularity. A git checkout rewrites whichever files
+        differ between branches, in arbitrary order, so `src` and `dist` can end up
+        microseconds apart with no content change at all -- a false positive that says
+        "stale" about a bundle that is current. Real staleness is commits apart, never
+        milliseconds, so a one-second tolerance removes the artefact without weakening
+        the check.
         """
         newest_src = _newest_mtime(SRC)
         dist_time = DIST_INDEX.stat().st_mtime
         self.assertGreaterEqual(
-            dist_time,
+            dist_time + STALENESS_TOLERANCE_S,
             newest_src,
             "frontend/dist/ is STALE: it predates changes in frontend/src. "
             "Rebuild with: cd frontend && npm ci && npm run build",
